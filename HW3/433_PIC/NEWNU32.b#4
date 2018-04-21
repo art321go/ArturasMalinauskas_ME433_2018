@@ -924,17 +924,26 @@ design rules under a new name.</description>
 <signal name="B15">
 <contactref element="U$1" pad="26"/>
 <contactref element="U$6" pad="8"/>
-<wire x1="25.654" y1="40.64" x2="48.895" y2="34.29" width="0" layer="19" extent="1-1"/>
+<wire x1="33.02" y1="40.64" x2="39.37" y2="34.29" width="0.3048" layer="1"/>
+<wire x1="39.37" y1="34.29" x2="48.8316" y2="34.29" width="0.3048" layer="1"/>
+<wire x1="25.654" y1="40.64" x2="33.02" y2="40.64" width="0.3048" layer="1"/>
+<wire x1="48.8316" y1="34.29" x2="48.895" y2="34.29" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="B14">
 <contactref element="U$1" pad="25"/>
 <contactref element="U$6" pad="7"/>
-<wire x1="25.654" y1="38.1" x2="48.895" y2="31.75" width="0" layer="19" extent="1-1"/>
+<wire x1="25.654" y1="38.1" x2="33.02" y2="38.1" width="0.3048" layer="1"/>
+<wire x1="33.02" y1="38.1" x2="39.37" y2="31.75" width="0.3048" layer="1"/>
+<wire x1="39.37" y1="31.75" x2="48.8316" y2="31.75" width="0.3048" layer="1"/>
+<wire x1="48.8316" y1="31.75" x2="48.895" y2="31.75" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="B13">
 <contactref element="U$1" pad="24"/>
 <contactref element="U$6" pad="6"/>
-<wire x1="25.654" y1="35.56" x2="48.895" y2="29.21" width="0" layer="19" extent="1-1"/>
+<wire x1="25.654" y1="35.56" x2="33.02" y2="35.56" width="0.3048" layer="1"/>
+<wire x1="33.02" y1="35.56" x2="39.37" y2="29.21" width="0.3048" layer="1"/>
+<wire x1="39.37" y1="29.21" x2="48.8316" y2="29.21" width="0.3048" layer="1"/>
+<wire x1="48.8316" y1="29.21" x2="48.895" y2="29.21" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="D-">
 <contactref element="U$1" pad="22"/>
