@@ -5,7 +5,7 @@
 #pragma config DEBUG = 0b0 // no debugging
 #pragma config JTAGEN = 0b0 // no jtag
 #pragma config ICESEL = 0b11 // use PGED1 and PGEC1
-#pragma config PWP = 0b11111111 // no write protect
+#pragma config PWP = 0b111111111 // no write protect
 #pragma config BWP = 0b1 // no boot write protect
 #pragma config CP = 0b1 // no code protect
 
@@ -27,7 +27,7 @@
 #pragma config FPLLMUL = 0b111 // multiply clock after FPLLIDIV
 #pragma config FPLLODIV = 0b001 // divide clock after FPLLMUL to get 48MHz
 #pragma config UPLLIDIV = 0b001 // divider for the 8MHz input clock, then multiplied by 12 to get 48MHz for USB
-#pragma config UPLLEN = 00 // USB clock on
+#pragma config UPLLEN = 0b0 // USB clock on
 
 // DEVCFG3
 #pragma config USERID = 0b0110011001100110 // some 16bit userid, doesn't matter what
@@ -54,13 +54,24 @@ int main() {
     DDPCONbits.JTAGEN = 0;
 
     // do your TRIS and LAT commands here
-    TRISAbits.TRISA4 = 0b1;
+    TRISAbits.TRISA4 = 0b0;     //pin A4 is an output
     LATAbits.LATA4 = 0b1;
+    
+    TRISBbits.TRISB4 = 0b1;     //pin B4 is an input
 
     __builtin_enable_interrupts();
-
+    
+   
+    
     while(1) {
+        _CP0_SET_COUNT(0); //initializing the core timer to zero
+        while(!PORTBbits.RB4) {
+        ;   // Pin B4 is the USER switch, low (FALSE) if pressed.
+    }
+        while (_CP0_GET_COUNT() < 2400) {}
 	// use _CP0_SET_COUNT(0) and _CP0_GET_COUNT() to test the PIC timing
 	// remember the core timer runs at half the sysclk
+        LATAINV = 0b1 << 4;
+        _CP0_SET_COUNT(0);
+        }
     }
-}
