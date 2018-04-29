@@ -62,16 +62,19 @@ int main() {
     __builtin_enable_interrupts();
     
    
-    
+     _CP0_SET_COUNT(0); //initializing the core timer to zero
+     int USER = 1 ;      //button for user input, default value 1 is unpressed
+        
     while(1) {
-        _CP0_SET_COUNT(0); //initializing the core timer to zero
-        while(!PORTBbits.RB4) {
-        ;   // Pin B4 is the USER switch, low (FALSE) if pressed.
-    }
-        while (_CP0_GET_COUNT() < 2400) {}
+        while (_CP0_GET_COUNT() < 2400) {;} //delay by .5 ms for 1kHz total cycle
 	// use _CP0_SET_COUNT(0) and _CP0_GET_COUNT() to test the PIC timing
 	// remember the core timer runs at half the sysclk
-        LATAINV = 0b1 << 4;
+        USER = PORTBbits.RB4;
+        if (USER)
+        { LATAINV = 0b1 << 4; }
+        if (!USER)                  //if USER pressed, LED off
+        { LATAbits.LATA4 = 0b0;}
         _CP0_SET_COUNT(0);
         }
+    
     }
