@@ -38,13 +38,11 @@
 #pragma config FUSBIDIO = 0b1 // USB pins controlled by USB module
 #pragma config FVBUSONIO = 0b1 // USB BUSON controlled by USB module
 
-
-
 #define CS LATBbits.LATB3       // chip select pin
-
+//B8 is SDO pin
 
 // send a byte via spi and return the response
-unsigned char SPI_io(unsigned char o) {
+unsigned char spi_io(unsigned char o) {
   SPI1BUF = o;
   while(!SPI1STATbits.SPIRBF) { // wait to receive the byte
     ;
@@ -53,14 +51,14 @@ unsigned char SPI_io(unsigned char o) {
 }
 
 // initialize spi 
-void SPI_init() {
+void spi_init() {
   ANSELA = 0;
   ANSELB = 0;
-  RPB2Rbits.RPB2R = 0b0011;
-  SDI1Rbits.SDI1R = 0b0100;
-  
+  SS1Rbits.SS1R = 0b0001;    //setting B3 as chip select
+  SDI1Rbits.SDI1R = 0b0010;  //B1 is data in (not actually used here)
+  RPB8Rbits.RPB8R = 0b0011;  //B8 is data out
   TRISBbits.TRISB3 = 0;
-  CS = 1;
+  CS = 0b1;
   
   SPI1CON = 0;              // turn off the spi module and reset it
   SPI1BUF;                  // clear the rx buffer by reading from it
@@ -75,14 +73,14 @@ void SPI_init() {
 }
 
 void setVoltage(char channel, int v) {
-    CS=0;
+    LATBbits.LATB3=0;
 	int t;
 	t= channel << 15; //a is at the very end of the data transfer
 	t = t | 0b0111000000000000;
 	t = t | ((v& 0b1111111111) << 2);
-	SPI_io(t >> 8);
-    SPI_io(t & 0xFF);
-    CS = 1;
+	spi_io(t >> 8);
+    spi_io(t & 0xFF);
+    LATBbits.LATB3 = 1;
 }
 
 
@@ -109,26 +107,33 @@ int main() {
     
     TRISBbits.TRISB4 = 0b1;     //pin B4 is an input
 
+    spi_init();  
+    
+    
     __builtin_enable_interrupts();
     
-    SPI_init(); 
  
  int ii = 0;
- float f;
+ float si, tri;
   
   while(1) {
     _CP0_SET_COUNT(0);
     
     //setting Sine Wave
-	//f = 512 +512*sin(ii*2*3.1415*10/1000);  //should make a 10Hz sin wave)
-    //setVoltage(0,f);
-    //ii++;
-    CS = 1;
+	si = 512 +512*sin(ii*2*3.1415*10/1000);  //should make a 10Hz sin wave)
+    setVoltage(0,si);
+    
+    
+    //setting triangle wave
+   if (ii%200 < 100) {
+       tri = (int)((float) (ii%200) / 100 * 1023);
+        }
+        else {
+       tri = (int)((float)(200- ii%200) / 100 * 1023);         
+        }
+        ii++; 
+    setVoltage(1,tri);
+    
 	while(_CP0_GET_COUNT() < 24000) {;}
-    _CP0_SET_COUNT(0);
-    CS = 0;
-    setVoltage(0,0);
-    setVoltage(1,0);
-    while(_CP0_GET_COUNT() < 24000) {;}
-  }
+    }
 }
