@@ -16284,11 +16284,6 @@ Source: www.kingbright.com</description>
 <wire x1="195.58" y1="132.08" x2="185.42" y2="132.08" width="0.1524" layer="91"/>
 <label x="187.96" y="132.08" size="1.778" layer="95" rot="MR0"/>
 </segment>
-<segment>
-<pinref part="SPI" gate="G$1" pin="5.SDI"/>
-<wire x1="33.02" y1="-50.8" x2="22.86" y2="-50.8" width="0.1524" layer="91"/>
-<label x="22.86" y="-50.8" size="1.778" layer="95"/>
-</segment>
 </net>
 <net name="PGD" class="0">
 <segment>
@@ -16336,6 +16331,11 @@ Source: www.kingbright.com</description>
 <pinref part="U$7" gate="G$1" pin="5"/>
 <wire x1="195.58" y1="127" x2="185.42" y2="127" width="0.1524" layer="91"/>
 <label x="187.96" y="127" size="1.778" layer="95" rot="MR0"/>
+</segment>
+<segment>
+<pinref part="SPI" gate="G$1" pin="5.SDI"/>
+<wire x1="33.02" y1="-50.8" x2="22.86" y2="-50.8" width="0.1524" layer="91"/>
+<label x="22.86" y="-50.8" size="1.778" layer="95"/>
 </segment>
 </net>
 <net name="B4/USER" class="0">
@@ -16477,6 +16477,11 @@ Source: www.kingbright.com</description>
 <wire x1="223.52" y1="124.46" x2="228.6" y2="124.46" width="0.1524" layer="91"/>
 <label x="226.06" y="124.46" size="1.778" layer="95"/>
 </segment>
+<segment>
+<pinref part="SPI" gate="G$1" pin="3.CS"/>
+<wire x1="33.02" y1="-35.56" x2="22.86" y2="-35.56" width="0.1524" layer="91"/>
+<label x="22.86" y="-35.56" size="1.778" layer="95"/>
+</segment>
 </net>
 <net name="B7" class="0">
 <segment>
@@ -16488,11 +16493,6 @@ Source: www.kingbright.com</description>
 <pinref part="U$6" gate="G$1" pin="3"/>
 <wire x1="223.52" y1="121.92" x2="228.6" y2="121.92" width="0.1524" layer="91"/>
 <label x="226.06" y="121.92" size="1.778" layer="95"/>
-</segment>
-<segment>
-<pinref part="SPI" gate="G$1" pin="3.CS"/>
-<wire x1="33.02" y1="-35.56" x2="22.86" y2="-35.56" width="0.1524" layer="91"/>
-<label x="22.86" y="-35.56" size="1.778" layer="95"/>
 </segment>
 </net>
 <net name="VB" class="0">

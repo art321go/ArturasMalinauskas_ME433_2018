@@ -1,3 +1,4 @@
+
 #include<xc.h>           // processor SFR definitions
 #include<sys/attribs.h>  // __ISR macro
 #include <math.h> 	//for sine wave plotting
@@ -39,31 +40,8 @@
 
 
 
-// Demonstrates spi by accessing external ram
-// PIC is the master, ram is the slave
-// SDO -> SI (pin A1)
-// SDI -> SO (pin unused)
-// SCK1 -> SCK (pin B14)
-// SS1 -> CS (pin B7)
+#define CS LATBbits.LATB3       // chip select pin
 
-#define CS LATBbits.LATB7       // chip select pin
-
-
-// initialize spi 
-void SPI_init() {
-
-  SPI1CON = 0;              // turn off the spi module and reset it
-  SPI1BUF;                  // clear the rx buffer by reading from it
-  SPI1BRG = 0x3;            // baud rate to 10 MHz [SPI1BRG = (80000000/(2*desired))-1]
-  SPI1STATbits.SPIROV = 0;  // clear the overflow bit
-  SPI1CONbits.CKE = 1;      // data changes when clock goes from hi to lo (since CKP is 0)
-  SPI1CONbits.MSTEN = 1;    // master operation
-  SPI1CONbits.ON = 1;       // turn on spi 4
-  
-  RPA1Rbits.RPA1R = 0b0011;
-  TRISBbits.TRISB7 = 0;
-  CS = 1;
-}
 
 // send a byte via spi and return the response
 unsigned char SPI_io(unsigned char o) {
@@ -74,43 +52,83 @@ unsigned char SPI_io(unsigned char o) {
   return SPI1BUF;
 }
 
-void setVoltage(char out, int v) {
-	unsigned short t = 0;
-	t= out << 15; //a is at the very end of the data transfer
-	t = t | 0b01110000000000000;
-	t = t | ((v&0b1111111111) <<2); //rejecting excessive bits (above 10)
-	
-	CS = 0;
-	SPI_io(t>>8);
+// initialize spi 
+void SPI_init() {
+  ANSELA = 0;
+  ANSELB = 0;
+  RPB2Rbits.RPB2R = 0b0011;
+  SDI1Rbits.SDI1R = 0b0100;
+  
+  TRISBbits.TRISB3 = 0;
+  CS = 1;
+  
+  SPI1CON = 0;              // turn off the spi module and reset it
+  SPI1BUF;                  // clear the rx buffer by reading from it
+  SPI1BRG = 1;            // baud rate to 10 MHz [SPI1BRG = (80000000/(2*desired))-1]
+  SPI1STATbits.SPIROV = 0;  // clear the overflow bit
+  SPI1CONbits.CKE = 1;      // data changes when clock goes from hi to lo (since CKP is 0)
+  SPI1CONbits.MODE32=0;
+  SPI1CONbits.MODE16=0;
+  SPI1CONbits.MSTEN = 1;    // master operation
+  SPI1CONbits.MSSEN = 0;
+  SPI1CONbits.ON = 1;       // turn on spi
+}
+
+void setVoltage(char channel, int v) {
+    CS=0;
+	int t;
+	t= channel << 15; //a is at the very end of the data transfer
+	t = t | 0b0111000000000000;
+	t = t | ((v& 0b1111111111) << 2);
+	SPI_io(t >> 8);
+    SPI_io(t & 0xFF);
+    CS = 1;
 }
 
 
 
 int main() {
-    __builtin_disable_interrupts();    // set the CP0 CONFIG register to indicate that kseg0 is cacheable (0x3)
-    __builtin_mtc0(_CP0_CONFIG, _CP0_CONFIG_SELECT, 0xa4210583);    // 0 data RAM access wait states
-    BMXCONbits.BMXWSDRM = 0x0;    // enable multi vector interrupts
-    INTCONbits.MVEC = 0x1;    // disable JTAG to get pins back
-    DDPCONbits.JTAGEN = 0;    // do your TRIS and LAT commands here
-    TRISAbits.TRISA4 = 0b0;     //pin A4 is an output
-    LATAbits.LATA4 = 0b1;    
-    TRISBbits.TRISB4 = 0b1;     //pin B4 is an input
- 
-     SPI_init();   
-    __builtin_enable_interrupts();
-   
-  unsigned short addr1 = 0x1234;                  // the address for writing the ram
+    
+  __builtin_disable_interrupts();
   
+    // set the CP0 CONFIG register to indicate that kseg0 is cacheable (0x3)
+    __builtin_mtc0(_CP0_CONFIG, _CP0_CONFIG_SELECT, 0xa4210583);
+
+    // 0 data RAM access wait states
+    BMXCONbits.BMXWSDRM = 0x0;
+
+    // enable multi vector interrupts
+    INTCONbits.MVEC = 0x1;
+
+    // disable JTAG to get pins back
+    DDPCONbits.JTAGEN = 0;
+
+    // do your TRIS and LAT commands here
+    TRISAbits.TRISA4 = 0b0;     //pin A4 is an output
+    LATAbits.LATA4 = 0b1;
+    
+    TRISBbits.TRISB4 = 0b1;     //pin B4 is an input
+
+    __builtin_enable_interrupts();
+    
+    SPI_init(); 
  
  int ii = 0;
+ float f;
   
   while(1) {
     _CP0_SET_COUNT(0);
-	float f = 512 +512*sin(ii*2*3.1415/1000*10);  //should make a 10Hz sin wave)
-    setVoltage(0,f);
-
+    
+    //setting Sine Wave
+	//f = 512 +512*sin(ii*2*3.1415*10/1000);  //should make a 10Hz sin wave)
+    //setVoltage(0,f);
+    //ii++;
+    CS = 1;
 	while(_CP0_GET_COUNT() < 24000) {;}
-  
+    _CP0_SET_COUNT(0);
+    CS = 0;
+    setVoltage(0,0);
+    setVoltage(1,0);
+    while(_CP0_GET_COUNT() < 24000) {;}
   }
-  return 0;
 }
