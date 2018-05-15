@@ -1,149 +1,110 @@
-/* ************************************************************************** */
-/** Descriptive File Name
+#include<xc.h>           // processor SFR definitions
+#include<sys/attribs.h>  // __ISR macro
+#include"i2c_master_noint.h"
 
-  @Company
-    Company Name
+// DEVCFG0
+#pragma config DEBUG = 0b0 // no debugging
+#pragma config JTAGEN = 0b0 // no jtag
+#pragma config ICESEL = 0b11 // use PGED1 and PGEC1
+#pragma config PWP = 0b111111111 // no write protect
+#pragma config BWP = 0b1 // no boot write protect
+#pragma config CP = 0b1 // no code protect
 
-  @File Name
-    filename.c
+// DEVCFG1
+#pragma config FNOSC = 0b011 // use primary oscillator with pll
+#pragma config FSOSCEN = 0b0 // turn off secondary oscillator
+#pragma config IESO = 0b0 // no switching clocks
+#pragma config POSCMOD = 0b10 // high speed crystal mode
+#pragma config OSCIOFNC = 0b1 // disable secondary osc
+#pragma config FPBDIV = 0b00 // divide sysclk freq by 1 for peripheral bus clock
+#pragma config FCKSM = 0b10 // do not enable clock switch
+#pragma config WDTPS = 0b10100 // use slowest wdt
+#pragma config WINDIS = 0b1 // wdt no window mode
+#pragma config FWDTEN = 0b0 // wdt disabled
+#pragma config FWDTWINSZ = 0b11 // wdt window at 25%
 
-  @Summary
-    Brief description of the file.
+// DEVCFG2 - get the sysclk clock to 48MHz from the 8MHz crystal
+#pragma config FPLLIDIV = 0b001 // divide input clock to be in range 4-5MHz
+#pragma config FPLLMUL = 0b111 // multiply clock after FPLLIDIV
+#pragma config FPLLODIV = 0b001 // divide clock after FPLLMUL to get 48MHz
+#pragma config UPLLIDIV = 0b001 // divider for the 8MHz input clock, then multiplied by 12 to get 48MHz for USB
+#pragma config UPLLEN = 0b0 // USB clock on
 
-  @Description
-    Describe the purpose of this file.
- */
-/* ************************************************************************** */
-
-/* ************************************************************************** */
-/* ************************************************************************** */
-/* Section: Included Files                                                    */
-/* ************************************************************************** */
-/* ************************************************************************** */
-
-/* This section lists the other files that are included in this file.
- */
-
-/* TODO:  Include other files here if needed. */
+// DEVCFG3
+#pragma config USERID = 0b0110011001100110 // some 16bit userid, doesn't matter what
+#pragma config PMDL1WAY = 0b0 // allow multiple reconfigurations
+#pragma config IOL1WAY = 0b0 // allow multiple reconfigurations
+#pragma config FUSBIDIO = 0b1 // USB pins controlled by USB module
+#pragma config FVBUSONIO = 0b1 // USB BUSON controlled by USB module
 
 
-/* ************************************************************************** */
-/* ************************************************************************** */
-/* Section: File Scope or Global Data                                         */
-/* ************************************************************************** */
-/* ************************************************************************** */
-
-/*  A brief description of a section can be given directly below the section
-    banner.
- */
-
-/* ************************************************************************** */
-/** Descriptive Data Item Name
-
-  @Summary
-    Brief one-line summary of the data item.
+void initExpander(){
     
-  @Description
-    Full description, explaining the purpose and usage of data item.
-    <p>
-    Additional description in consecutive paragraphs separated by HTML 
-    paragraph breaks, as necessary.
-    <p>
-    Type "JavaDoc" in the "How Do I?" IDE toolbar for more information on tags.
+    ANSELBbits.ANSB2 = 0;
+    ANSELBbits.ANSB3 = 0;
+    i2c_master_setup();
+}
+
+void setExpander(char pin, char level) {
+    i2c_master_start();
+    i2c_master_send(0b0100000<<1|0);
+    i2c_master_send(pin); // the register to write to
+    i2c_master_send(level); // the value to put in the register
+    i2c_master_stop();
+}
+
+
+char getExpander() {
+    i2c_master_start();
+    i2c_master_send(0b0100000<<1|0);
+    return ( i2c_master_recv() );
     
-  @Remarks
-    Any additional remarks
- */
-int global_data;
-
-
-/* ************************************************************************** */
-/* ************************************************************************** */
-// Section: Local Functions                                                   */
-/* ************************************************************************** */
-/* ************************************************************************** */
-
-/*  A brief description of a section can be given directly below the section
-    banner.
- */
-
-/* ************************************************************************** */
-
-/** 
-  @Function
-    int ExampleLocalFunctionName ( int param1, int param2 ) 
-
-  @Summary
-    Brief one-line description of the function.
-
-  @Description
-    Full description, explaining the purpose and usage of the function.
-    <p>
-    Additional description in consecutive paragraphs separated by HTML 
-    paragraph breaks, as necessary.
-    <p>
-    Type "JavaDoc" in the "How Do I?" IDE toolbar for more information on tags.
-
-  @Precondition
-    List and describe any required preconditions. If there are no preconditions,
-    enter "None."
-
-  @Parameters
-    @param param1 Describe the first parameter to the function.
+    i2c_master_ack(1); // make the ack so the slave knows we got it
+    i2c_master_stop();
     
-    @param param2 Describe the second parameter to the function.
+}
 
-  @Returns
-    List (if feasible) and describe the return values of the function.
-    <ul>
-      <li>1   Indicates an error occurred
-      <li>0   Indicates an error did not occur
-    </ul>
 
-  @Remarks
-    Describe any special behavior not described above.
-    <p>
-    Any additional remarks.
 
-  @Example
-    @code
-    if(ExampleFunctionName(1, 2) == 0)
-    {
-        return 3;
+
+int main() {
+
+    __builtin_disable_interrupts();
+
+    // set the CP0 CONFIG register to indicate that kseg0 is cacheable (0x3)
+    __builtin_mtc0(_CP0_CONFIG, _CP0_CONFIG_SELECT, 0xa4210583);
+
+    // 0 data RAM access wait states
+    BMXCONbits.BMXWSDRM = 0x0;
+
+    // enable multi vector interrupts
+    INTCONbits.MVEC = 0x1;
+
+    // disable JTAG to get pins back
+    DDPCONbits.JTAGEN = 0;
+
+    // do your TRIS and LAT commands here
+    TRISAbits.TRISA4 = 0b0;     //pin A4 is an output
+    LATAbits.LATA4 = 0b1;
+    
+    TRISBbits.TRISB4 = 0b1;     //pin B4 is an input
+
+    __builtin_enable_interrupts();
+    
+   
+     _CP0_SET_COUNT(0); //initializing the core timer to zero
+     int USER = 1 ;      //button for user input, default value 1 is unpressed
+        
+    while(1) {
+        while (_CP0_GET_COUNT() < 2400) {;} //delay by .5 ms for 1kHz total cycle
+	// use _CP0_SET_COUNT(0) and _CP0_GET_COUNT() to test the PIC timing
+	// remember the core timer runs at half the sysclk
+        USER = PORTBbits.RB4;
+        if (USER)
+        { LATAINV = 0b1 << 4; }
+        if (!USER)                  //if USER pressed, LED off
+        { LATAbits.LATA4 = 0b0;}
+        _CP0_SET_COUNT(0);
+        }
+    
     }
- */
-static int ExampleLocalFunction(int param1, int param2) {
-    return 0;
-}
-
-
-/* ************************************************************************** */
-/* ************************************************************************** */
-// Section: Interface Functions                                               */
-/* ************************************************************************** */
-/* ************************************************************************** */
-
-/*  A brief description of a section can be given directly below the section
-    banner.
- */
-
-// *****************************************************************************
-
-/** 
-  @Function
-    int ExampleInterfaceFunctionName ( int param1, int param2 ) 
-
-  @Summary
-    Brief one-line description of the function.
-
-  @Remarks
-    Refer to the example_file.h interface header for function usage details.
- */
-int ExampleInterfaceFunction(int param1, int param2) {
-    return 0;
-}
-
-
-/* *****************************************************************************
- End of File
- */

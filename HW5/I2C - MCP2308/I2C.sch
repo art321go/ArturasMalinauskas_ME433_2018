@@ -15893,6 +15893,9 @@ Source: www.kingbright.com</description>
 <part name="R8" library="433" deviceset="R-US_" device="0207/10" package3d_urn="urn:adsk.eagle:package:25939/1" value="10k"/>
 <part name="+3V11" library="433" deviceset="+3V3" device=""/>
 <part name="+3V12" library="433" deviceset="+3V3" device=""/>
+<part name="GND22" library="433" deviceset="GND" device=""/>
+<part name="GND23" library="433" deviceset="GND" device=""/>
+<part name="GND24" library="433" deviceset="GND" device=""/>
 </parts>
 <sheets>
 <sheet>
@@ -15964,6 +15967,9 @@ Source: www.kingbright.com</description>
 <instance part="R8" gate="G$1" x="10.16" y="-30.48" rot="R270"/>
 <instance part="+3V11" gate="G$1" x="12.7" y="-7.62" rot="R270"/>
 <instance part="+3V12" gate="G$1" x="7.62" y="-38.1" rot="R90"/>
+<instance part="GND22" gate="1" x="17.78" y="-33.02"/>
+<instance part="GND23" gate="1" x="17.78" y="-38.1"/>
+<instance part="GND24" gate="1" x="24.13" y="-38.354" rot="R180"/>
 </instances>
 <busses>
 </busses>
@@ -16075,6 +16081,22 @@ Source: www.kingbright.com</description>
 <pinref part="U$10" gate="G$1" pin="9.VSS"/>
 <wire x1="27.94" y1="-60.96" x2="12.7" y2="-60.96" width="0.1524" layer="91"/>
 <pinref part="GND21" gate="1" pin="GND"/>
+</segment>
+<segment>
+<pinref part="U$10" gate="G$1" pin="4.A1"/>
+<pinref part="GND23" gate="1" pin="GND"/>
+<wire x1="27.94" y1="-35.56" x2="17.78" y2="-35.56" width="0.1524" layer="91"/>
+</segment>
+<segment>
+<pinref part="U$10" gate="G$1" pin="3.A2"/>
+<pinref part="GND22" gate="1" pin="GND"/>
+<wire x1="27.94" y1="-30.48" x2="17.78" y2="-30.48" width="0.1524" layer="91"/>
+</segment>
+<segment>
+<pinref part="U$10" gate="G$1" pin="5.A0"/>
+<pinref part="GND24" gate="1" pin="GND"/>
+<wire x1="27.94" y1="-40.64" x2="27.94" y2="-40.894" width="0.1524" layer="91"/>
+<wire x1="27.94" y1="-40.894" x2="24.13" y2="-40.894" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="+5V" class="0">
