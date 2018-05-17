@@ -55,13 +55,15 @@ void setExpander(char pin, char level) {
 
 
 char getExpander() {
+    char c;
     i2c_master_start();
     i2c_master_send(0b0100000<<1|0);
-    return ( i2c_master_recv() );
     
+
+    c = i2c_master_recv() );
     i2c_master_ack(1); // make the ack so the slave knows we got it
     i2c_master_stop();
-    
+    return c;
 }
 
 
