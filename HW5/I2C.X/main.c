@@ -47,66 +47,71 @@ void initExpander(){
 
 void setExpander(char pin, char level) {
     i2c_master_start();
-    i2c_master_send(0b0100000<<1|0);
-    i2c_master_send(pin); // the register to write to
-    i2c_master_send(level); // the value to put in the register
+    i2c_master_send((0b0100000<<1)|0b00000000);
+    i2c_master_send(0x0A) ;     //Output latch register, bit 0 is pin 0, a value of 1 is logic high
+    i2c_master_send((level<<pin)|0b00000000); // writing the logic level to the pin
     i2c_master_stop();
 }
-
 
 char getExpander() {
     char c;
     i2c_master_start();
-    i2c_master_send(0b0100000<<1|0);
-    
-
-    c = i2c_master_recv() );
+    i2c_master_send((0b0100000<<1)|0b00000000);
+    i2c_master_send(0x09);     //address of the GPIO register
+    i2c_master_restart();
+    i2c_master_send((0b0100000<<1)|0b00000001);
+    c = i2c_master_recv();
     i2c_master_ack(1); // make the ack so the slave knows we got it
     i2c_master_stop();
     return c;
 }
 
-
-
-
 int main() {
 
     __builtin_disable_interrupts();
-
+    
     // set the CP0 CONFIG register to indicate that kseg0 is cacheable (0x3)
     __builtin_mtc0(_CP0_CONFIG, _CP0_CONFIG_SELECT, 0xa4210583);
-
     // 0 data RAM access wait states
     BMXCONbits.BMXWSDRM = 0x0;
-
     // enable multi vector interrupts
     INTCONbits.MVEC = 0x1;
-
     // disable JTAG to get pins back
     DDPCONbits.JTAGEN = 0;
-
-    // do your TRIS and LAT commands here
-    TRISAbits.TRISA4 = 0b0;     //pin A4 is an output
-    LATAbits.LATA4 = 0b1;
     
+    //TRIS and LAT commands
+    TRISAbits.TRISA4 = 0b0;     //pin A4 is an output
+    LATAbits.LATA4 = 0b1;       //A4 initially off
     TRISBbits.TRISB4 = 0b1;     //pin B4 is an input
 
+    initExpander();
     __builtin_enable_interrupts();
     
-   
-     _CP0_SET_COUNT(0); //initializing the core timer to zero
-     int USER = 1 ;      //button for user input, default value 1 is unpressed
-        
-    while(1) {
-        while (_CP0_GET_COUNT() < 2400) {;} //delay by .5 ms for 1kHz total cycle
-	// use _CP0_SET_COUNT(0) and _CP0_GET_COUNT() to test the PIC timing
-	// remember the core timer runs at half the sysclk
-        USER = PORTBbits.RB4;
-        if (USER)
-        { LATAINV = 0b1 << 4; }
-        if (!USER)                  //if USER pressed, LED off
-        { LATAbits.LATA4 = 0b0;}
-        _CP0_SET_COUNT(0);
-        }
+    //configuring GP0-GP3 as outputs, and GP4-GP7 as inputs
+    i2c_master_start();
+    i2c_master_send((0b0100000<<1)|0b00000000);
+    i2c_master_send(0x00);  //input/output direction register
+    i2c_master_send(0b11110000);    //directions matching input and output as desired
+    i2c_master_stop();
     
+    //blinking the LED, first it is initialized to on
+    setExpander(0,1);   //led is on GP0
+    
+    _CP0_SET_COUNT(0);
+    double LedTime = 0;     //variable for the PIC's LED to blink
+ while(1) {
+            if( (getExpander()>>7) ==0 ){
+                setExpander(0,1);
+            }
+            else {
+            setExpander(0,0);
+            }
+            
+            LedTime = LedTime + _CP0_GET_COUNT();
+        if (LedTime > 5000000000) { //delay so the LED blinks at a perceptible rate
+        LATAINV = 0b1 << 4;  //blinking the pic's LED to identify the code has not crashed 
+        _CP0_SET_COUNT(0);
+        LedTime=0;
+        }
     }
+}
