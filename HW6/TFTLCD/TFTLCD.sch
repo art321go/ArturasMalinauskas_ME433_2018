@@ -15732,6 +15732,99 @@ Source: www.kingbright.com</description>
 </deviceset>
 </devicesets>
 </library>
+<library name="gen433">
+<packages>
+<package name="TFTLCD">
+<pad name="P$1" x="-5.08" y="5.08" drill="0.6" shape="octagon"/>
+<pad name="P$2" x="-5.08" y="2.54" drill="0.6" shape="octagon"/>
+<pad name="P$3" x="-5.08" y="0" drill="0.6" shape="octagon"/>
+<pad name="P$4" x="-5.08" y="-2.54" drill="0.6" shape="octagon"/>
+<pad name="P$5" x="-5.08" y="-5.08" drill="0.6" shape="octagon"/>
+<pad name="P$6" x="-5.08" y="-7.62" drill="0.6" shape="octagon"/>
+<pad name="P$7" x="-5.08" y="-10.16" drill="0.6" shape="octagon"/>
+<pad name="P$8" x="-5.08" y="-12.7" drill="0.6" shape="octagon"/>
+</package>
+</packages>
+<symbols>
+<symbol name="TFTLCD">
+<pin name="8.VCC" x="-17.78" y="-40.64" length="middle"/>
+<pin name="1.LED" x="-17.78" y="12.7" length="middle"/>
+<pin name="2.SCK" x="-17.78" y="5.08" length="middle"/>
+<pin name="3.SDA" x="-17.78" y="-2.54" length="middle"/>
+<pin name="4.A0" x="-17.78" y="-10.16" length="middle"/>
+<pin name="5.RESET" x="-17.78" y="-17.78" length="middle"/>
+<pin name="6.CS" x="-17.78" y="-25.4" length="middle"/>
+<pin name="7.GND" x="-17.78" y="-33.02" length="middle"/>
+<wire x1="-15.24" y1="15.24" x2="-15.24" y2="-43.18" width="0.1524" layer="94"/>
+<wire x1="-15.24" y1="-43.18" x2="7.62" y2="-43.18" width="0.1524" layer="94"/>
+<wire x1="7.62" y1="-43.18" x2="7.62" y2="15.24" width="0.1524" layer="94"/>
+<wire x1="7.62" y1="15.24" x2="-15.24" y2="15.24" width="0.1524" layer="94"/>
+<text x="-17.78" y="20.32" size="1.778" layer="94">&gt;NAME</text>
+<text x="2.54" y="20.32" size="1.778" layer="94">&gt;VALUE</text>
+</symbol>
+<symbol name="+3V3">
+<wire x1="1.27" y1="-1.905" x2="0" y2="0" width="0.254" layer="94"/>
+<wire x1="0" y1="0" x2="-1.27" y2="-1.905" width="0.254" layer="94"/>
+<text x="-2.54" y="-5.08" size="1.778" layer="96" rot="R90">&gt;VALUE</text>
+<pin name="+3V3" x="0" y="-2.54" visible="off" length="short" direction="sup" rot="R90"/>
+</symbol>
+<symbol name="GND">
+<wire x1="-1.905" y1="0" x2="1.905" y2="0" width="0.254" layer="94"/>
+<text x="-2.54" y="-2.54" size="1.778" layer="96">&gt;VALUE</text>
+<pin name="GND" x="0" y="2.54" visible="off" length="short" direction="sup" rot="R270"/>
+</symbol>
+</symbols>
+<devicesets>
+<deviceset name="TFTLCD">
+<gates>
+<gate name="G$1" symbol="TFTLCD" x="0" y="0"/>
+</gates>
+<devices>
+<device name="" package="TFTLCD">
+<connects>
+<connect gate="G$1" pin="1.LED" pad="P$1"/>
+<connect gate="G$1" pin="2.SCK" pad="P$2"/>
+<connect gate="G$1" pin="3.SDA" pad="P$3"/>
+<connect gate="G$1" pin="4.A0" pad="P$4"/>
+<connect gate="G$1" pin="5.RESET" pad="P$5"/>
+<connect gate="G$1" pin="6.CS" pad="P$6"/>
+<connect gate="G$1" pin="7.GND" pad="P$7"/>
+<connect gate="G$1" pin="8.VCC" pad="P$8"/>
+</connects>
+<technologies>
+<technology name=""/>
+</technologies>
+</device>
+</devices>
+</deviceset>
+<deviceset name="+3V3" prefix="+3V3">
+<description>&lt;b&gt;SUPPLY SYMBOL&lt;/b&gt;</description>
+<gates>
+<gate name="G$1" symbol="+3V3" x="0" y="0"/>
+</gates>
+<devices>
+<device name="">
+<technologies>
+<technology name=""/>
+</technologies>
+</device>
+</devices>
+</deviceset>
+<deviceset name="GND" prefix="GND">
+<description>&lt;b&gt;SUPPLY SYMBOL&lt;/b&gt;</description>
+<gates>
+<gate name="1" symbol="GND" x="0" y="0"/>
+</gates>
+<devices>
+<device name="">
+<technologies>
+<technology name=""/>
+</technologies>
+</device>
+</devices>
+</deviceset>
+</devicesets>
+</library>
 </libraries>
 <attributes>
 </attributes>
@@ -15794,6 +15887,11 @@ Source: www.kingbright.com</description>
 <part name="+3V7" library="433" deviceset="+3V3" device=""/>
 <part name="P+3" library="433" deviceset="+5V" device=""/>
 <part name="+3V8" library="433" deviceset="+3V3" device=""/>
+<part name="U$10" library="gen433" deviceset="TFTLCD" device=""/>
+<part name="+3V9" library="gen433" deviceset="+3V3" device=""/>
+<part name="+3V10" library="gen433" deviceset="+3V3" device=""/>
+<part name="+3V11" library="gen433" deviceset="+3V3" device=""/>
+<part name="GND20" library="gen433" deviceset="GND" device=""/>
 </parts>
 <sheets>
 <sheet>
@@ -15852,6 +15950,11 @@ Source: www.kingbright.com</description>
 <instance part="+3V7" gate="G$1" x="187.96" y="121.92" rot="MR0"/>
 <instance part="P+3" gate="1" x="236.22" y="121.92"/>
 <instance part="+3V8" gate="G$1" x="91.44" y="55.88"/>
+<instance part="U$10" gate="G$1" x="55.88" y="-27.94"/>
+<instance part="+3V9" gate="G$1" x="20.32" y="-12.7"/>
+<instance part="+3V10" gate="G$1" x="20.32" y="-43.18"/>
+<instance part="+3V11" gate="G$1" x="20.32" y="-66.04"/>
+<instance part="GND20" gate="1" x="20.32" y="-58.42" rot="R180"/>
 </instances>
 <busses>
 </busses>
@@ -15954,6 +16057,11 @@ Source: www.kingbright.com</description>
 <pinref part="GND10" gate="1" pin="GND"/>
 <wire x1="157.48" y1="27.94" x2="157.48" y2="33.02" width="0.1524" layer="91"/>
 </segment>
+<segment>
+<pinref part="U$10" gate="G$1" pin="7.GND"/>
+<pinref part="GND20" gate="1" pin="GND"/>
+<wire x1="38.1" y1="-60.96" x2="20.32" y2="-60.96" width="0.1524" layer="91"/>
+</segment>
 </net>
 <net name="+5V" class="0">
 <segment>
@@ -16039,6 +16147,21 @@ Source: www.kingbright.com</description>
 <pinref part="+3V8" gate="G$1" pin="+3V3"/>
 <wire x1="68.58" y1="53.34" x2="91.44" y2="53.34" width="0.1524" layer="91"/>
 </segment>
+<segment>
+<pinref part="U$10" gate="G$1" pin="8.VCC"/>
+<pinref part="+3V11" gate="G$1" pin="+3V3"/>
+<wire x1="38.1" y1="-68.58" x2="20.32" y2="-68.58" width="0.1524" layer="91"/>
+</segment>
+<segment>
+<pinref part="U$10" gate="G$1" pin="5.RESET"/>
+<pinref part="+3V10" gate="G$1" pin="+3V3"/>
+<wire x1="38.1" y1="-45.72" x2="20.32" y2="-45.72" width="0.1524" layer="91"/>
+</segment>
+<segment>
+<pinref part="U$10" gate="G$1" pin="1.LED"/>
+<wire x1="38.1" y1="-15.24" x2="20.32" y2="-15.24" width="0.1524" layer="91"/>
+<pinref part="+3V9" gate="G$1" pin="+3V3"/>
+</segment>
 </net>
 <net name="N$2" class="0">
 <segment>
@@ -16113,6 +16236,11 @@ Source: www.kingbright.com</description>
 <pinref part="U$7" gate="G$1" pin="7"/>
 <wire x1="195.58" y1="132.08" x2="185.42" y2="132.08" width="0.1524" layer="91"/>
 <label x="187.96" y="132.08" size="1.778" layer="95" rot="MR0"/>
+</segment>
+<segment>
+<pinref part="U$10" gate="G$1" pin="3.SDA"/>
+<wire x1="38.1" y1="-30.48" x2="30.48" y2="-30.48" width="0.1524" layer="91"/>
+<label x="27.94" y="-30.48" size="1.778" layer="95"/>
 </segment>
 </net>
 <net name="PGD" class="0">
@@ -16225,6 +16353,11 @@ Source: www.kingbright.com</description>
 <wire x1="223.52" y1="134.62" x2="228.6" y2="134.62" width="0.1524" layer="91"/>
 <label x="226.06" y="134.62" size="1.778" layer="95"/>
 </segment>
+<segment>
+<pinref part="U$10" gate="G$1" pin="4.A0"/>
+<wire x1="38.1" y1="-38.1" x2="30.48" y2="-38.1" width="0.1524" layer="91"/>
+<label x="27.94" y="-38.1" size="1.778" layer="95"/>
+</segment>
 </net>
 <net name="B14" class="0">
 <segment>
@@ -16236,6 +16369,11 @@ Source: www.kingbright.com</description>
 <pinref part="U$6" gate="G$1" pin="7"/>
 <wire x1="223.52" y1="132.08" x2="228.6" y2="132.08" width="0.1524" layer="91"/>
 <label x="228.6" y="132.08" size="1.778" layer="95"/>
+</segment>
+<segment>
+<pinref part="U$10" gate="G$1" pin="2.SCK"/>
+<wire x1="38.1" y1="-22.86" x2="30.48" y2="-22.86" width="0.1524" layer="91"/>
+<label x="27.94" y="-22.86" size="1.778" layer="95"/>
 </segment>
 </net>
 <net name="B13" class="0">
@@ -16308,6 +16446,11 @@ Source: www.kingbright.com</description>
 <pinref part="U$6" gate="G$1" pin="3"/>
 <wire x1="223.52" y1="121.92" x2="228.6" y2="121.92" width="0.1524" layer="91"/>
 <label x="226.06" y="121.92" size="1.778" layer="95"/>
+</segment>
+<segment>
+<pinref part="U$10" gate="G$1" pin="6.CS"/>
+<wire x1="38.1" y1="-53.34" x2="30.48" y2="-53.34" width="0.1524" layer="91"/>
+<label x="27.94" y="-53.34" size="1.778" layer="95"/>
 </segment>
 </net>
 <net name="VB" class="0">
