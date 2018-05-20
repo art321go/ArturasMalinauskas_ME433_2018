@@ -46,13 +46,12 @@ void  drawChar(short x ,short y ,char* mess ,short c1 ,short c2){      //draws c
 		char pixels = ASCII[row][col];
 		int j = 0;
 		for (j=0; j<8; j++) {
-			if( (pixels >>j) & 1 == 1 ) {
-                if ( x+col <128 && y+j < 160 )      //checking the pixel is drawn in the range of the LCD screen
-                {
+            if ( x+col <128 && y+j < 160 ) {      //checking the pixel is drawn in the range of the LCD screen
+                if( (pixels >>j) & 1 == 1 ) {                
 				LCD_drawPixel(x+col ,y+j ,c1 );         //draw pixel is defined in St7735.c
-                }
-			else
+                }else{
 				LCD_drawPixel(x+col ,y+j ,c2 );
+                }
             }
         }
     }
@@ -68,17 +67,75 @@ void drawString(short x ,short y ,char* message ,short c1 ,short c2 ) {         
 	}
 }
 
+void drawProgressBar (short x ,short y , short len , short h ,short c1 , short c2 ) {
+    int ll, hh;
+    for (ll = 0; ll < len; ll++) {
+        LCD_drawPixel(x+ll ,y , c1 );
+        LCD_drawPixel(x+ll ,y+1 , c1 ); //double thickness bar
+        LCD_drawPixel(x+ll ,y+h-1 , c1 );
+        LCD_drawPixel(x+ll ,y+h , c1 );
+        for (hh = 0; hh < h; hh++){
+            if ( (hh < 2) | (hh  > h-2) | ll<2 | ll>len-3 ){
+                LCD_drawPixel(x+ll ,y+hh ,c1 );
+            }else{
+                LCD_drawPixel(x+ll ,y+hh , c2 );
+            }
+        }
+    }
+}
 
-//void drawProgressBar (x ,y ,h ,len1 ,color1 ,len2 ,c2 )
-//Make pixel lines
+void drawProgress (short x, short y, short len, short h, short prog, short c1 , short c2 ) {
+    int ll, hh;
+    for (ll = 0; ll < len; ll++) {
+        for (hh = 0; hh < h; hh++){
+            if (ll < prog) {
+                LCD_drawPixel(x+ll ,y+hh ,c1 );
+            } else{
+                LCD_drawPixel(x+ll ,y+hh ,c2 );
+            }
+        }
+    }
+}
+
 #define STRLONG 80       //length of string
+#define GREEN2    0xA670
+#define PRIMARY_COL GREEN2  //color definitions
+#define SECONDARY_COL WHITE
+#define COUNTER 2400000     //frequency of the counter (10Hz)
 
 int main () {
     LCD_init();
-    LCD_clearScreen(WHITE);
+    LCD_clearScreen(SECONDARY_COL);
     char str [STRLONG];
-    sprintf(str, "Hello World");        //will add countdown %d
-    drawString(28,32,str, MAGENTA, YELLOW);
+    char fps [STRLONG];
+    int count=1; 
+    int height = 16;
+    int length = 108;
+    float frames= 0;  //initial value
+    drawProgressBar (10 , 64, length , height , PRIMARY_COL , SECONDARY_COL);
+    while (1){  
+        _CP0_SET_COUNT(0);
+        if (count > 99) {   //reseting the count at 100
+            count =0;       //count will immediately be incremented to start value of 1
+            sprintf(str, "Hi! Countup: %d   ", 1);
+            
+            frames=0;
+            drawString(28,32,str, PRIMARY_COL , SECONDARY_COL);
+            drawString(14,100,fps, PRIMARY_COL , SECONDARY_COL);
+            drawProgress(14, 68, length-8, height-8, count, PRIMARY_COL , SECONDARY_COL ); //reseting progress bar
+        } 
+        count ++;
+        frames = _CP0_GET_COUNT();
+        sprintf(str, "Hi! Countup: %d", count);        //will add countdown %d
+        drawString(28,32,str, PRIMARY_COL , SECONDARY_COL );
+        drawProgress(14, 68, length-8, height-8, count, PRIMARY_COL , SECONDARY_COL );
+        frames = _CP0_GET_COUNT() - frames;         //counting time between bar drawing
+        
+        sprintf(fps, "FPS = %5.2f", frames*100/COUNTER);
+        drawString(14,100,fps, PRIMARY_COL , SECONDARY_COL);
+        while (_CP0_GET_COUNT() < COUNTER){;}
+    }
+    
 
 
 }
