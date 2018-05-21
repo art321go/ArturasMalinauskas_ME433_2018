@@ -166,6 +166,13 @@ static const char ASCII[96][5] = {
 #define MAGENTA   0xF81F
 #define YELLOW    0xFFE0
 
+//setup for debugging
+#define STRLONG 80       //length of string
+#define GREEN2    0xA670
+#define PRIMARY_COL GREEN2  //color definitions
+#define SECONDARY_COL WHITE
+
+
 unsigned char spi_io(unsigned char); // send and rx a byte over spi
 void LCD_command(unsigned char); // send a command to the LCD
 void LCD_data(unsigned char); // send data to the LCD
@@ -174,5 +181,12 @@ void LCD_init(void); // send the initializations to the LCD
 void LCD_drawPixel(unsigned short, unsigned short, unsigned short); // set the x,y pixel to a color
 void LCD_setAddr(unsigned short, unsigned short, unsigned short, unsigned short); // set the memory address you are writing to
 void LCD_clearScreen(unsigned short); // set the color of every pixel
+
+//drawing text for debugging
+void  drawChar(short x ,short y ,char* mess ,short c1 ,short c2); //displaying characters
+void drawString(short x ,short y ,char* message ,short c1 ,short c2 ); //displaying strings on the LCD
+//cycling a progress bar
+void drawProgressBar (short x ,short y , short len , short h ,short c1 , short c2 );// drawing a progress bar
+void drawProgress (short x, short y, short len, short h, short prog, short c1 , short c2 );//drawing progress of a task
 
 #endif
