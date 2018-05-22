@@ -43,30 +43,73 @@
 #define COUNTER 2400000     //counter for progress bar  
 #define addy    0b1101011   //address for the IMU
 
+
+//new i2c functions
+void setReg(char reg, char val) {       //sets the value of an imu register 
+    i2c_master_start();
+    i2c_master_send(addy<<1|0);
+    i2c_master_send(reg) ;     //sending the location of the register
+    i2c_master_send(val); // writing the value to the register
+    i2c_master_stop();
+}
+
+
+void init_IMU(){
+    ANSELBbits.ANSB2 = 0;
+    ANSELBbits.ANSB3 = 0;
+    i2c_master_setup();
+    setReg(0x10 ,0b10000010);       //CTRL1_XL 1000 is 1.66kHz     00 +-2g      10 100Hz filter
+    setReg(0x11 ,0b10001000) ;      //CTRL2_G  1000 is 1.66kHz     10 is 1000 dps sensitivity         00 default
+    setReg(0x12 ,0b00000100) ;      //CTRL3_C  default, with IF_INC enabled (2nd bit)
+}
+
+
+
+
+
 int main () {
     
     //I2C setup
     
     __builtin_disable_interrupts();
-    init_i2c();
+    init_IMU();
+    LCD_init();
     __builtin_enable_interrupts();
     
+    //checking WHO_AM_I register
+    char r;
+    i2c_master_start(); // make the start bit
+    i2c_master_send( (addy<1) | 0b00000000); //sending address of the IMU
+    i2c_master_send(0x0F); //  read from desired WHO_AM_I_REGISTER
+    i2c_master_restart(); // make the restart bit
+    i2c_master_send( (addy<1) | 0b00000001); // sending address
+    r = i2c_master_recv(); // saving the value returned
+    i2c_master_ack(1); // make the ack so the slave knows we got it
+    i2c_master_stop(); // make the stop bit    
  
+    
     //LCD debugging setup
-    LCD_init();
     LCD_clearScreen(SECONDARY_COL);
     char str [STRLONG];
     char fps [STRLONG];
+    char who [STRLONG];
+    
     int count=1; 
     int height = 16;
     int length = 108;
     float frames= 0;  //initial value
     drawProgressBar (10 , 64, length , height , PRIMARY_COL , SECONDARY_COL);
     //end of LCD debugging setup
+    count = 0b01101001;
+    sprintf(str, "Screen check %d ", count )   ;
+    drawString(28,28,str, PRIMARY_COL , SECONDARY_COL);
+    sprintf(who, "I AM  %d !", r );
+    drawString(28,40,who, PRIMARY_COL , SECONDARY_COL);
+
+    
     
     
     while (1){  
-        
         
         //progress bar to check if code crashed
         _CP0_SET_COUNT(0);

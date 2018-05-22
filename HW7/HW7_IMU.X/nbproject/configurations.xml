@@ -5,7 +5,7 @@
                    displayName="Header Files"
                    projectFiles="true">
       <itemPath>LEDHELP.h</itemPath>
-      <itemPath>i2c_master_noint.h</itemPath>
+      <itemPath>i2c__master_noint.h</itemPath>
     </logicalFolder>
     <logicalFolder name="LinkerScript"
                    displayName="Linker Files"
@@ -16,7 +16,7 @@
                    projectFiles="true">
       <itemPath>main.c</itemPath>
       <itemPath>LEDHELP.c</itemPath>
-      <itemPath>i2c_master_noint.c</itemPath>
+      <itemPath>i2c__master_noint.c</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"

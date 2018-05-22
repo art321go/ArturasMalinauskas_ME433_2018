@@ -26,10 +26,32 @@
             android:layout_width="640px"
             android:layout_height="480px" />
 
+
+        <SeekBar
+            android:id="@+id/seek1"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="1dp"
+            android:progress="10"
+            android:secondaryProgress="100"
+            android:paddingTop="3dp"
+            android:paddingBottom="3dp"
+            />
+
+
+        <TextView
+            android:id="@+id/textView01"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="initial val " />
+
+
         <TextureView
             android:id="@+id/textureview"
             android:layout_width="640px"
             android:layout_height="480px" />
+
+
 
     </LinearLayout>
 
