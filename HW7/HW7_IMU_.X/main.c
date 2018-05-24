@@ -2,8 +2,8 @@
 #include<sys/attribs.h>  // __ISR macro
 #include<math.h>        //math functions
 #include<stdio.h>
-#include "LEDHELP.h"      //given library for ST7735
-#include"i2c__master_noint.h"    //library for I2C
+#include "LED_HELP.h"      //given library for ST7735
+#include "i2c_master_noint.h"    //library for I2C
 
 // DEVCFG0
 #pragma config DEBUG = 0b0 // no debugging
@@ -63,50 +63,39 @@ void init_IMU(){
     setReg(0x12 ,0b00000100) ;      //CTRL3_C  default, with IF_INC enabled (2nd bit)
 }
 
-
-
-
-
 int main () {
-    
-    //I2C setup
-    
     __builtin_disable_interrupts();
     init_IMU();
     LCD_init();
-    __builtin_enable_interrupts();
-    
-    //checking WHO_AM_I register
-    char r;
-    i2c_master_start(); // make the start bit
-    i2c_master_send( (addy<1) | 0b00000000); //sending address of the IMU
-    i2c_master_send(0x0F); //  read from desired WHO_AM_I_REGISTER
-    i2c_master_restart(); // make the restart bit
-    i2c_master_send( (addy<1) | 0b00000001); // sending address
-    r = i2c_master_recv(); // saving the value returned
-    i2c_master_ack(1); // make the ack so the slave knows we got it
-    i2c_master_stop(); // make the stop bit    
- 
+    __builtin_enable_interrupts(); 
     
     //LCD debugging setup
     LCD_clearScreen(SECONDARY_COL);
     char str [STRLONG];
     char fps [STRLONG];
-    char who [STRLONG];
+    char oops [STRLONG];
     
     int count=1; 
     int height = 16;
     int length = 108;
-    float frames= 0;  //initial value
     drawProgressBar (10 , 64, length , height , PRIMARY_COL , SECONDARY_COL);
     //end of LCD debugging setup
-    count = 0b01101001;
-    sprintf(str, "Screen check %d ", count )   ;
-    drawString(28,28,str, PRIMARY_COL , SECONDARY_COL);
-    sprintf(who, "I AM  %d !", r );
-    drawString(28,40,who, PRIMARY_COL , SECONDARY_COL);
-
     
+            //checking WHO_AM_I register
+    unsigned char r;
+    i2c_master_start(); // make the start bit
+    i2c_master_send( (addy<<1) | 0); //sending address of the IMU
+    i2c_master_send(0x0F); //  read from desired WHO_AM_I_REGISTER
+    i2c_master_restart(); // make the restart bit
+    i2c_master_send( (addy<<1) | 1); // sending address
+    r = i2c_master_recv(); // saving the value returned
+    i2c_master_ack(1); // make the ack so the slave knows we got it
+    i2c_master_stop(); // make the stop bit
+    if (r != 105) {
+        sprintf(oops, "ERROR   I am:%d !", r );
+        drawString(28,40,oops, PRIMARY_COL , SECONDARY_COL);
+        while (1) {;}
+    }
     
     
     while (1){  
@@ -115,17 +104,15 @@ int main () {
         _CP0_SET_COUNT(0);
         if (count > 99) {   //reseting the count at 100
             count =0;       //count will immediately be incremented to start value of 1
-            frames=0;
-            drawString(14,100,fps, PRIMARY_COL , SECONDARY_COL);
             drawProgress(14, 68, length-8, height-8, count, PRIMARY_COL , SECONDARY_COL ); //reseting progress bar
         } 
         count ++;
-        frames = _CP0_GET_COUNT();
         drawProgress(14, 68, length-8, height-8, count, PRIMARY_COL , SECONDARY_COL );
-        frames = _CP0_GET_COUNT() - frames;         //counting time between bar drawing        
-        sprintf(fps, "FPS = %5.2f", frames*100/COUNTER);
-        drawString(14,100,fps, PRIMARY_COL , SECONDARY_COL);
         while (_CP0_GET_COUNT() < COUNTER){;}
+         //   count = 0b01101001;
+    sprintf(str, "Screen check %d ", count )   ;
+    drawString(28,28,str, PRIMARY_COL , SECONDARY_COL);  
+        
     }
     
 }

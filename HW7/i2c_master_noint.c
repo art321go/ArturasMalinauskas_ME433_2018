@@ -1,9 +1,10 @@
 #include<xc.h>
-#include "i2c__master_noint.h"
+#include "i2c_master_noint.h"
 
 // I2C Master utilities, 400 kHz, using polling rather than interrupts
 // The functions must be callled in the correct order as per the I2C protocol
-
+// Change I2C1 to the I2C channel you are using
+// I2C pins need pull-up resistors, 2k-10k
 
 void i2c_master_setup(void) {
   I2C2BRG = 53;            // I2CBRG = [1/(2*Fsck) - PGD]*Pblck - 2
