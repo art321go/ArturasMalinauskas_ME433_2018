@@ -251,6 +251,7 @@ void LCD_clearScreen(unsigned short color) {
 void  drawChar(short x ,short y ,char* mess ,short c1 ,short c2){      //draws characters from the ASCII table
 	char row = *mess - 0x20 ;
 	int col = 0;
+    int indicate = 0;           //counter to allow characters to run onto new lines
 	for (col = 0; col < 5; col++) {
 		char pixels = ASCII[row][col];
 		int j = 0;
@@ -261,6 +262,14 @@ void  drawChar(short x ,short y ,char* mess ,short c1 ,short c2){      //draws c
                 }else{
 				LCD_drawPixel(x+col ,y+j ,c2 );
                 }
+            }
+            if ( x+col >128) {
+                if( (pixels >>j) & 1 == 1 ) {                
+				LCD_drawPixel(x+col ,y+j ,c1 );         //draw pixel is defined in St7735.c
+                }else{
+				LCD_drawPixel(x+col ,y+j ,c2 );
+                }
+                
             }
         }
     }

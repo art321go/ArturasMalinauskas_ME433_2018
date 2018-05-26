@@ -117,7 +117,7 @@ int main () {
         _CP0_SET_COUNT(0);
         if (count > 99) {   //reseting the count at 100
             count =0;       //count will immediately be incremented to start value of 1
-            sprintf(str, "Hi! Countup: %d   ", 1);
+            sprintf(str, "Hi Mom and Dad!: %d   ", 1);
             
             frames=0;
             drawString(28,32,str, PRIMARY_COL , SECONDARY_COL);
@@ -126,7 +126,7 @@ int main () {
         } 
         count ++;
         frames = _CP0_GET_COUNT();
-        sprintf(str, "Hi! Countup: %d", count);        //will add countdown %d
+        sprintf(str, "Hi Mom and Dad!: %d", count);        //will add countdown %d
         drawString(28,32,str, PRIMARY_COL , SECONDARY_COL );
         drawProgress(14, 68, length-8, height-8, count, PRIMARY_COL , SECONDARY_COL );
         frames = _CP0_GET_COUNT() - frames;         //counting time between bar drawing
@@ -134,9 +134,9 @@ int main () {
         sprintf(fps, "FPS = %5.2f", frames*100/COUNTER);
         drawString(14,100,fps, PRIMARY_COL , SECONDARY_COL);
         while (_CP0_GET_COUNT() < COUNTER){;}
+    
+        
     }
     
-
-
 }
 

@@ -40,19 +40,20 @@
 #pragma config FUSBIDIO = 0b1 // USB pins controlled by USB module
 #pragma config FVBUSONIO = 0b1 // USB BUSON controlled by USB module
 
-#define COUNTER 2400000     //counter for progress bar  
+#define COUNTER 1200000     //counter for IMU  
+#define LEN     14          //length of data array to be out put from IMU (2 temp, 6 gyro, 6 accel register values)
 #define addy    0b1101011   //address for the IMU
+#define REGIS    0x20        //address of OUT_TEMP_L register
 
 
 //new i2c functions
 void setReg(char reg, char val) {       //sets the value of an imu register 
     i2c_master_start();
-    i2c_master_send(addy<<1|0);
+    i2c_master_send( addy<<1 |0);
     i2c_master_send(reg) ;     //sending the location of the register
     i2c_master_send(val); // writing the value to the register
     i2c_master_stop();
 }
-
 
 void init_IMU(){
     ANSELBbits.ANSB2 = 0;
@@ -63,25 +64,36 @@ void init_IMU(){
     setReg(0x12 ,0b00000100) ;      //CTRL3_C  default, with IF_INC enabled (2nd bit)
 }
 
+void I2C_read_multiple(unsigned char address, unsigned char reg, unsigned char * data, int length) {
+    i2c_master_start(); // make the start bit
+    i2c_master_send( (address<<1) | 0); //sending address of the IMU
+    i2c_master_send(reg); //  read from desired register
+    i2c_master_restart(); // make the restart bit
+    i2c_master_send( (address<<1) | 1); //sending address of the IMU
+    
+    int ll = 0;
+    for (ll = 0; ll < length-1; ll++) { 
+        data[ll] = i2c_master_recv(); // saving the value returned
+        i2c_master_ack(0); // make the ack so the slave knows we got it
+    }
+    data[length] = i2c_master_recv(); // saving the value returned
+    i2c_master_ack(1); // make the ack so the slave knows we got it
+    i2c_master_stop(); // make the stop bit        
+}
+
+
 int main () {
     __builtin_disable_interrupts();
+    //setting up IMU for I2C communication and setting up LCD controls
     init_IMU();
     LCD_init();
+        //TRIS and LAT commands
+    TRISAbits.TRISA4 = 0b0;     //pin A4 is an output
+    LATAbits.LATA4 = 0b1;       //A4 initially off
     __builtin_enable_interrupts(); 
-    
-    //LCD debugging setup
     LCD_clearScreen(SECONDARY_COL);
-    char str [STRLONG];
-    char fps [STRLONG];
-    char oops [STRLONG];
     
-    int count=1; 
-    int height = 16;
-    int length = 108;
-    drawProgressBar (10 , 64, length , height , PRIMARY_COL , SECONDARY_COL);
-    //end of LCD debugging setup
-    
-            //checking WHO_AM_I register
+    //checking WHO_AM_I register
     unsigned char r;
     i2c_master_start(); // make the start bit
     i2c_master_send( (addy<<1) | 0); //sending address of the IMU
@@ -92,27 +104,74 @@ int main () {
     i2c_master_ack(1); // make the ack so the slave knows we got it
     i2c_master_stop(); // make the stop bit
     if (r != 105) {
+        char oops [STRLONG];
         sprintf(oops, "ERROR   I am:%d !", r );
-        drawString(28,40,oops, PRIMARY_COL , SECONDARY_COL);
+        drawString(28,10,oops, PRIMARY_COL , SECONDARY_COL);
         while (1) {;}
     }
+    //
+        
+    //LCD debugging setup
+    char str [STRLONG];
+    int count=0; 
+    int height = 16;
+    int length = 108;
+    drawProgressBar (10 , 140, length , height , PRIMARY_COL , SECONDARY_COL);
+    //end of LCD debugging setup
+    
+    
+    // setting up LED heartbeat for the PIC
+     _CP0_SET_COUNT(0);
+    double LedTime = 0;     //variable for the PIC's LED to blink
+    //
+    
     
     
     while (1){  
+        _CP0_SET_COUNT(0);
         
         //progress bar to check if code crashed
-        _CP0_SET_COUNT(0);
         if (count > 99) {   //reseting the count at 100
             count =0;       //count will immediately be incremented to start value of 1
-            drawProgress(14, 68, length-8, height-8, count, PRIMARY_COL , SECONDARY_COL ); //reseting progress bar
+            drawProgress(14, 144, length-8, height-8, count, PRIMARY_COL , SECONDARY_COL ); //reseting progress bar
         } 
         count ++;
-        drawProgress(14, 68, length-8, height-8, count, PRIMARY_COL , SECONDARY_COL );
+        drawProgress(14, 144, length-8, height-8, count, PRIMARY_COL , SECONDARY_COL );
         while (_CP0_GET_COUNT() < COUNTER){;}
-         //   count = 0b01101001;
-    sprintf(str, "Screen check %d ", count )   ;
-    drawString(28,28,str, PRIMARY_COL , SECONDARY_COL);  
+        sprintf(str, "Screen check %d  ", count )   ;
+        drawString(28,10,str, PRIMARY_COL , SECONDARY_COL);  
+        //
         
-    }
+        //reseting values for the gyro
+        char imu [LEN];  
+        char check [STRLONG];
+        signed short temp =0;
+        signed short gX =0;
+        signed short gY =0;
+        signed short gZ =0;
+        signed short aX =0;
+        signed short aY =0;
+        signed short aZ =0;
+        //
+        
+        //reading IMU data
+        I2C_read_multiple(addy, REGIS, imu, LEN);
+        int mm;
+        for (mm = 0; mm < LEN/2; mm += 2){
+            ;
+        }
+        temp = ( (imu[1] << 8) |  (imu[0])  );      //creating a short of the values by shifting the high register bits and "or"ing the low bits
+        gY = ( (imu[3] << 8) |  (imu[2])  );
+        sprintf(check, "k %d     ", gY )   ;
+        drawString(28,20,check, PRIMARY_COL , SECONDARY_COL); 
+        //
     
+        //delay so the LED blinks at a perceptible rate that isnt annoying
+        LedTime = LedTime + _CP0_GET_COUNT();
+        if (LedTime > 1000000) { 
+            LATAINV = 0b1 << 4;  //blinking the pic's LED to identify the code has not crashed 
+            LedTime=0;
+        }
+        //
+    }   
 }
