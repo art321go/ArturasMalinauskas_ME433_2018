@@ -111,20 +111,22 @@ int main () {
     }
     //
         
-    //LCD debugging setup
+    //LCD crosshair setup
     char str [STRLONG];
     int count=0; 
-    int height = 16;
-    int length = 108;
-    drawProgressBar (10 , 140, length , height , PRIMARY_COL , SECONDARY_COL);
-    //end of LCD debugging setup
-    
+    int height = 2;
+    int length = 100;
+    drawProgressBar (14 , 80, length , height-1 , PRIMARY_COL , SECONDARY_COL); //X axis
+    drawProgressBar (64 , 30, height , length , PRIMARY_COL , SECONDARY_COL);   //Y axis
+    //
     
     // setting up LED heartbeat for the PIC
      _CP0_SET_COUNT(0);
     double LedTime = 0;     //variable for the PIC's LED to blink
     //
     
+    
+    //drawing empty 2 wide crosshair at 64,80 , 50 in each direction ( 30 - 130 , 14 - 114)
     
     
     while (1){  
@@ -133,42 +135,48 @@ int main () {
         //progress bar to check if code crashed
         if (count > 99) {   //reseting the count at 100
             count =0;       //count will immediately be incremented to start value of 1
-            drawProgress(14, 144, length-8, height-8, count, PRIMARY_COL , SECONDARY_COL ); //reseting progress bar
+            //drawProgress(14, 144, length-8, height-8, count, PRIMARY_COL , SECONDARY_COL ); //reseting progress bar
         } 
         count ++;
-        drawProgress(14, 144, length-8, height-8, count, PRIMARY_COL , SECONDARY_COL );
+        //drawProgress(14, 144, length-8, height-8, count, PRIMARY_COL , SECONDARY_COL );
         while (_CP0_GET_COUNT() < COUNTER){;}
         sprintf(str, "Screen check %d  ", count )   ;
         drawString(28,10,str, PRIMARY_COL , SECONDARY_COL);  
         //
         
         //reseting values for the gyro
-        char imu [LEN];  
-        char check [STRLONG];
-        signed short temp =0;
-        signed short gX =0;
-        signed short gY =0;
-        signed short gZ =0;
-        signed short aX =0;
-        signed short aY =0;
-        signed short aZ =0;
+        char imu_raw [LEN];
+        signed short imu_  [LEN/2];
+        signed int imu_p  [LEN/2];    //adjusted IMU data to a percentage of 65535, the max value of the short
+        char check1 [STRLONG];
+        char check2 [STRLONG];
+        char check3 [STRLONG];
+        char check4 [STRLONG];
         //
         
         //reading IMU data
-        I2C_read_multiple(addy, REGIS, imu, LEN);
-        int mm;
-        for (mm = 0; mm < LEN/2; mm += 2){
-            ;
-        }
-        temp = ( (imu[1] << 8) |  (imu[0])  );      //creating a short of the values by shifting the high register bits and "or"ing the low bits
-        gY = ( (imu[3] << 8) |  (imu[2])  );
-        sprintf(check, "k %d     ", gY )   ;
-        drawString(28,20,check, PRIMARY_COL , SECONDARY_COL); 
+        I2C_read_multiple(addy, REGIS, imu_raw, LEN);
+        int mm =0;
+        int nn =0;
+        while (mm < LEN/2 ){        //populating an array of signed shorts with the high and low data values
+            imu_[mm] = ( (imu_raw[nn+1] << 8) |  (imu_raw[nn])  );//creating a short of the values by shifting the high register bits and "or"ing the low bits
+            imu_p[mm] = ( ( ( signed int ) (imu_[mm] ) ) * 100) / 32768 ; 
+            mm ++;
+            nn += 2;
+        }        
+        sprintf(check1, "k %d    %d   ", imu_[1], imu_p[1] )   ;
+        sprintf(check2, "k %d    %d   ", imu_[2], imu_p[2] )   ;
+        sprintf(check3, "k %d    %d   ", imu_[4], imu_p[4] )   ;
+        sprintf(check4, "k %d    %d   ", imu_[5], imu_p[5] )   ;
+        drawString(28,20,check1, PRIMARY_COL , SECONDARY_COL); 
+        drawString(28,30,check2, PRIMARY_COL , SECONDARY_COL); 
+        drawString(28,40,check3, PRIMARY_COL , SECONDARY_COL); 
+        drawString(28,50,check4, PRIMARY_COL , SECONDARY_COL); 
         //
     
         //delay so the LED blinks at a perceptible rate that isnt annoying
         LedTime = LedTime + _CP0_GET_COUNT();
-        if (LedTime > 1000000) { 
+        if (LedTime > 5000000) { 
             LATAINV = 0b1 << 4;  //blinking the pic's LED to identify the code has not crashed 
             LedTime=0;
         }
