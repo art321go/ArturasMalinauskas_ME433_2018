@@ -115,9 +115,9 @@ int main () {
     char str [STRLONG];
     int count=0; 
     int height = 2;
-    int length = 100;
-    drawProgressBar (14 , 80, length , height-1 , PRIMARY_COL , SECONDARY_COL); //X axis
-    drawProgressBar (64 , 30, height , length , PRIMARY_COL , SECONDARY_COL);   //Y axis
+    int length = 50;
+    //drawProgressBar (14 , 80, length , height-1 , PRIMARY_COL , SECONDARY_COL); //X axis
+    //drawProgressBar (64 , 30, height , length , PRIMARY_COL , SECONDARY_COL);   //Y axis
     //
     
     // setting up LED heartbeat for the PIC
@@ -128,11 +128,10 @@ int main () {
     
     //drawing empty 2 wide crosshair at 64,80 , 50 in each direction ( 30 - 130 , 14 - 114)
     
-    
     while (1){  
         _CP0_SET_COUNT(0);
         
-        //progress bar to check if code crashed
+        //progress counter to check if LCD has crashed
         if (count > 99) {   //reseting the count at 100
             count =0;       //count will immediately be incremented to start value of 1
             //drawProgress(14, 144, length-8, height-8, count, PRIMARY_COL , SECONDARY_COL ); //reseting progress bar
@@ -141,17 +140,15 @@ int main () {
         //drawProgress(14, 144, length-8, height-8, count, PRIMARY_COL , SECONDARY_COL );
         while (_CP0_GET_COUNT() < COUNTER){;}
         sprintf(str, "Screen check %d  ", count )   ;
-        drawString(28,10,str, PRIMARY_COL , SECONDARY_COL);  
+        drawString(28,0,str, PRIMARY_COL , SECONDARY_COL);  
         //
         
         //reseting values for the gyro
-        char imu_raw [LEN];
+        unsigned char imu_raw [LEN];
         signed short imu_  [LEN/2];
         signed int imu_p  [LEN/2];    //adjusted IMU data to a percentage of 65535, the max value of the short
-        char check1 [STRLONG];
-        char check2 [STRLONG];
-        char check3 [STRLONG];
-        char check4 [STRLONG];
+        char checkx [STRLONG];
+        char checky [STRLONG];
         //
         
         //reading IMU data
@@ -164,15 +161,16 @@ int main () {
             mm ++;
             nn += 2;
         }        
-        sprintf(check1, "k %d    %d   ", imu_[1], imu_p[1] )   ;
-        sprintf(check2, "k %d    %d   ", imu_[2], imu_p[2] )   ;
-        sprintf(check3, "k %d    %d   ", imu_[4], imu_p[4] )   ;
-        sprintf(check4, "k %d    %d   ", imu_[5], imu_p[5] )   ;
-        drawString(28,20,check1, PRIMARY_COL , SECONDARY_COL); 
-        drawString(28,30,check2, PRIMARY_COL , SECONDARY_COL); 
-        drawString(28,40,check3, PRIMARY_COL , SECONDARY_COL); 
-        drawString(28,50,check4, PRIMARY_COL , SECONDARY_COL); 
+        
+        sprintf(checkx, "X: %d    %d   ", imu_[4], imu_p[4] )   ;
+        sprintf(checky, "Y: %d    %d   ", imu_[5], imu_p[5] )   ;
+        drawString(28,10,checkx, PRIMARY_COL , SECONDARY_COL); 
+        drawString(28,20,checky, PRIMARY_COL , SECONDARY_COL); 
         //
+        
+        //drawing the x and y acceleration on the crosshair
+        drawCross(64, 80, length, height, imu_p[4], imu_p[5], PRIMARY_COL, THIRD_COL);
+        
     
         //delay so the LED blinks at a perceptible rate that isnt annoying
         LedTime = LedTime + _CP0_GET_COUNT();

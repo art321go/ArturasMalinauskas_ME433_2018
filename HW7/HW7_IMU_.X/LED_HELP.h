@@ -171,6 +171,7 @@ static const char ASCII[96][5] = {
 #define GREEN2    0xA670
 #define PRIMARY_COL GREEN2  //color definitions
 #define SECONDARY_COL WHITE
+#define THIRD_COL   GREEN
 
 
 unsigned char spi_io(unsigned char); // send and rx a byte over spi

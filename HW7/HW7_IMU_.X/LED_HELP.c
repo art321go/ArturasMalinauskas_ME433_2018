@@ -15,6 +15,7 @@
 // B8 is turned into SDI1 but is not used or connected to anything
 
 #include <xc.h>
+#include <math.h>
 #include "LED_HELP.h"
 
 void SPI1_init() {
@@ -287,7 +288,7 @@ void drawString(short x ,short y ,char* message ,short c1 ,short c2 ) {         
 
 void drawProgressBar (short x ,short y , short len , short h ,short c1 , short c2 ) {
     int ll, hh;
-    for (ll = 0; ll < len; ll++) {
+    for (ll = 0; abs(ll) < abs(len); ll++) {
         LCD_drawPixel(x+ll ,y , c1 );
         LCD_drawPixel(x+ll ,y+1 , c1 ); //double thickness bar
         LCD_drawPixel(x+ll ,y+h-1 , c1 );
@@ -314,3 +315,38 @@ void drawProgress (short x, short y, short len, short h, short prog, short c1 , 
         }
     }
 }
+
+// what i call in mainn : drawCross(center x, center y, length of axes, thickness, x imu, y imu, color prog, color cross which is green 2);
+//new function for HW7, drawing a crosshair from an origin point
+void drawCross (short x, short y, short len, short thick, signed short progx, signed short progy, short c1 , short c2 ) {
+    int ll, tt;
+    for (ll = 0; ll < len; ll++) {
+        for (tt = 0; tt < thick; tt++){
+            //clearing old pixels
+            LCD_drawPixel(x+ll ,y+tt ,c1 );
+            LCD_drawPixel(x-ll ,y+tt ,c1 );
+            LCD_drawPixel(x+tt ,y+ll ,c1 );
+            LCD_drawPixel(x+tt ,y-ll ,c1 );            
+            
+            if (progx<0){
+                progx = -progx;
+                if (ll<progx){
+                    LCD_drawPixel(x-ll ,y+tt ,c2 );
+                }
+            } 
+            if (ll<progx){
+                    LCD_drawPixel(x+ll ,y+tt ,c2 );
+                }
+            
+            if (progy<0){
+                progy = -progy;
+                if (ll<progy){
+                    LCD_drawPixel(x+tt ,y+ll ,c2 );
+                }
+            } 
+            if (ll<progy){
+                    LCD_drawPixel(x+tt ,y-ll ,c2 );
+                } 
+            }
+        }
+    }
