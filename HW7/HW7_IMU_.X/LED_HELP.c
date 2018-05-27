@@ -319,33 +319,44 @@ void drawProgress (short x, short y, short len, short h, short prog, short c1 , 
 //new function for HW7, drawing a crosshair from an origin point
 void drawCross (short x, short y, short len, short thick, signed short progx, signed short progy, short c1 , short c2 ) {
     int ll, tt;
+    
+    //neg x/y indicate if x or y values are negative. They are switched because of the way the IMU is mounted on my breadboard
+    int negx = 1;
+    int negy = 1;
+    
+    //checking if either progress is in negative axis
+    if (progx<0){
+        progx = -progx;
+        negx = 0;
+    }
+    if (progy<0){
+        progy = -progy;
+        negy = 0;
+    }
+
+    //looping through each pixel in the cross hair and drawing one of two colors
     for (ll = 0; ll < len; ll++) {
         for (tt = 0; tt < thick; tt++){
             //clearing old pixels
             LCD_drawPixel(x+ll ,y+tt ,c1 );
             LCD_drawPixel(x-ll ,y+tt ,c1 );
             LCD_drawPixel(x+tt ,y+ll ,c1 );
-            LCD_drawPixel(x+tt ,y-ll ,c1 );            
+            LCD_drawPixel(x+tt ,y-ll ,c1 );
             
-            if (progx<0){
-                progx = -progx;
-                if (ll<progx){
-                    LCD_drawPixel(x-ll ,y+tt ,c2 );
-                }
-            } 
             if (ll<progx){
+                if (negx){
+                    LCD_drawPixel(x-ll ,y+tt ,c2 );
+                }else{
                     LCD_drawPixel(x+ll ,y+tt ,c2 );
                 }
-            
-            if (progy<0){
-                progy = -progy;
-                if (ll<progy){
+            }
+            if (ll<progy){
+                if (negy){
+                    LCD_drawPixel(x+tt ,y-ll ,c2 );
+                }else{
                     LCD_drawPixel(x+tt ,y+ll ,c2 );
                 }
-            } 
-            if (ll<progy){
-                    LCD_drawPixel(x+tt ,y-ll ,c2 );
-                } 
             }
         }
     }
+}
