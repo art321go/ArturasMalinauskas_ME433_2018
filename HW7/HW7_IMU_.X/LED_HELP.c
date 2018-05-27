@@ -316,7 +316,6 @@ void drawProgress (short x, short y, short len, short h, short prog, short c1 , 
     }
 }
 
-// what i call in mainn : drawCross(center x, center y, length of axes, thickness, x imu, y imu, color prog, color cross which is green 2);
 //new function for HW7, drawing a crosshair from an origin point
 void drawCross (short x, short y, short len, short thick, signed short progx, signed short progy, short c1 , short c2 ) {
     int ll, tt;
