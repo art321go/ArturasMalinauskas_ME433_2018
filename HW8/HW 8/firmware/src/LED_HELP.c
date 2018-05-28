@@ -15,7 +15,8 @@
 // B8 is turned into SDI1 but is not used or connected to anything
 
 #include <xc.h>
-#include "LEDHELP.h"
+#include <math.h>
+#include "LED_HELP.h"
 
 void SPI1_init() {
   SDI1Rbits.SDI1R = 0b0100; // B8 is SDI1
@@ -251,6 +252,7 @@ void LCD_clearScreen(unsigned short color) {
 void  drawChar(short x ,short y ,char* mess ,short c1 ,short c2){      //draws characters from the ASCII table
 	char row = *mess - 0x20 ;
 	int col = 0;
+    int indicate = 0;           //counter to allow characters to run onto new lines
 	for (col = 0; col < 5; col++) {
 		char pixels = ASCII[row][col];
 		int j = 0;
@@ -261,6 +263,14 @@ void  drawChar(short x ,short y ,char* mess ,short c1 ,short c2){      //draws c
                 }else{
 				LCD_drawPixel(x+col ,y+j ,c2 );
                 }
+            }
+            if ( x+col >128) {
+                if( (pixels >>j) & 1 == 1 ) {                
+				LCD_drawPixel(x+col ,y+j ,c1 );         //draw pixel is defined in St7735.c
+                }else{
+				LCD_drawPixel(x+col ,y+j ,c2 );
+                }
+                
             }
         }
     }
@@ -278,7 +288,7 @@ void drawString(short x ,short y ,char* message ,short c1 ,short c2 ) {         
 
 void drawProgressBar (short x ,short y , short len , short h ,short c1 , short c2 ) {
     int ll, hh;
-    for (ll = 0; ll < len; ll++) {
+    for (ll = 0; abs(ll) < abs(len); ll++) {
         LCD_drawPixel(x+ll ,y , c1 );
         LCD_drawPixel(x+ll ,y+1 , c1 ); //double thickness bar
         LCD_drawPixel(x+ll ,y+h-1 , c1 );
@@ -301,6 +311,51 @@ void drawProgress (short x, short y, short len, short h, short prog, short c1 , 
                 LCD_drawPixel(x+ll ,y+hh ,c1 );
             } else{
                 LCD_drawPixel(x+ll ,y+hh ,c2 );
+            }
+        }
+    }
+}
+
+//new function for HW7, drawing a crosshair from an origin point
+void drawCross (short x, short y, short len, short thick, signed short progx, signed short progy, short c1 , short c2 ) {
+    int ll, tt;
+    
+    //neg x/y indicate if x or y values are negative. They are switched because of the way the IMU is mounted on my breadboard
+    int negx = 1;
+    int negy = 1;
+    
+    //checking if either progress is in negative axis
+    if (progx<0){
+        progx = -progx;
+        negx = 0;
+    }
+    if (progy<0){
+        progy = -progy;
+        negy = 0;
+    }
+
+    //looping through each pixel in the cross hair and drawing one of two colors
+    for (ll = 0; ll < len; ll++) {
+        for (tt = 0; tt < thick; tt++){
+            //clearing old pixels
+            LCD_drawPixel(x+ll ,y+tt ,c1 );
+            LCD_drawPixel(x-ll ,y+tt ,c1 );
+            LCD_drawPixel(x+tt ,y+ll ,c1 );
+            LCD_drawPixel(x+tt ,y-ll ,c1 );
+            
+            if (ll<progx){
+                if (negx){
+                    LCD_drawPixel(x-ll ,y+tt ,c2 );
+                }else{
+                    LCD_drawPixel(x+ll ,y+tt ,c2 );
+                }
+            }
+            if (ll<progy){
+                if (negy){
+                    LCD_drawPixel(x+tt ,y-ll ,c2 );
+                }else{
+                    LCD_drawPixel(x+tt ,y+ll ,c2 );
+                }
             }
         }
     }

@@ -2,8 +2,8 @@
 // adapted from https://github.com/sumotoy/TFT_ST7735
 // and https://github.com/adafruit/Adafruit-ST7735-Library
 
-#ifndef LEDHELP_H__
-#define LEDHELP_H__
+#ifndef LED_HELP_H__
+#define LED_HELP_H__
 
 // lookup table for all of the ascii characters
 static const char ASCII[96][5] = {
@@ -171,6 +171,7 @@ static const char ASCII[96][5] = {
 #define GREEN2    0xA670
 #define PRIMARY_COL GREEN2  //color definitions
 #define SECONDARY_COL WHITE
+#define THIRD_COL   GREEN
 
 
 unsigned char spi_io(unsigned char); // send and rx a byte over spi

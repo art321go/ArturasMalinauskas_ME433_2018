@@ -90,6 +90,7 @@ int main () {
         //TRIS and LAT commands
     TRISAbits.TRISA4 = 0b0;     //pin A4 is an output
     LATAbits.LATA4 = 0b1;       //A4 initially off
+    TRISBbits.TRISB4 = 0b1;     //user button is input
     __builtin_enable_interrupts(); 
     LCD_clearScreen(SECONDARY_COL);
     
@@ -171,6 +172,13 @@ int main () {
         //drawing the x and y acceleration on the crosshair
         drawCross(64, 80, length, height, imu_p[4], imu_p[5], PRIMARY_COL, THIRD_COL);
         
+        //drawing like an etch a sketch
+        if (PORTBbits.RB4){
+            LCD_drawPixel(64-imu_p[4] ,80-imu_p[5] ,BLUE );
+            LCD_drawPixel(64-imu_p[4] ,81-imu_p[5] ,BLUE );
+            LCD_drawPixel(65-imu_p[4] ,81-imu_p[5] ,BLUE );
+            LCD_drawPixel(65-imu_p[4] ,80-imu_p[5] ,BLUE );
+        }
     
         //delay so the LED blinks at a perceptible rate that isnt annoying
         LedTime = LedTime + _CP0_GET_COUNT();
