@@ -1,9 +1,9 @@
 /*******************************************************************************
   MPLAB Harmony Application Source File
-  
+
   Company:
     Microchip Technology Inc.
-  
+
   File Name:
     app.c
 
@@ -11,8 +11,8 @@
     This file contains the source code for the MPLAB Harmony application.
 
   Description:
-    This file contains the source code for the MPLAB Harmony application.  It 
-    implements the logic of the application's state machine and it may call 
+    This file contains the source code for the MPLAB Harmony application.  It
+    implements the logic of the application's state machine and it may call
     API routines of other MPLAB Harmony modules in the system, such as drivers,
     system services, and middleware.  However, it does not call any of the
     system interfaces (such as the "Initialize" and "Tasks" functions) of any of
@@ -49,24 +49,43 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 
 // *****************************************************************************
 // *****************************************************************************
-// Section: Included Files 
+// Section: Included Files
 // *****************************************************************************
 // *****************************************************************************
 
 #include "app.h"
-#include <stdio.h>
-#include <xc.h>
+#include<xc.h>           // processor SFR definitions
+#include<sys/attribs.h>  // __ISR macro
+#include<math.h>        //math functions
+#include<stdio.h>
+#include "LED_HELP.h"      //given library for ST7735
+#include "i2c_master_noint.h"    //library for I2C
 
 // *****************************************************************************
 // *****************************************************************************
 // Section: Global Data Definitions
 // *****************************************************************************
 // *****************************************************************************
+#define COUNTER 1200000     //counter for IMU  
+#define LEN     14          //length of data array to be out put from IMU (2 temp, 6 gyro, 6 accel register values)
+#define addy    0b1101011   //address for the IMU
+#define REGIS    0x20        //address of OUT_TEMP_L register
+
 
 uint8_t APP_MAKE_BUFFER_DMA_READY dataOut[APP_READ_BUFFER_SIZE];
 uint8_t APP_MAKE_BUFFER_DMA_READY readBuffer[APP_READ_BUFFER_SIZE];
-int len, i = 0;
-int startTime = 0;
+
+int len, i, rcheck = 0;
+int startTime = 0; // to remember the loop time
+
+// variables for the IMU
+    double LedTime = 0;     //variable for the PIC's LED to blink
+            //values for the gyro
+    unsigned char imu_raw [LEN];
+    signed short imu_  [LEN/2];
+    char checkx [STRLONG];
+    char checky [STRLONG];
+//
 
 // *****************************************************************************
 /* Application Data
@@ -79,7 +98,7 @@ int startTime = 0;
 
   Remarks:
     This structure should be initialized by the APP_Initialize function.
-    
+
     Application strings and buffers are be defined outside this structure.
  */
 
@@ -219,7 +238,7 @@ void APP_USBDeviceEventHandler(USB_DEVICE_EVENT event, void * eventData, uintptr
 
         case USB_DEVICE_EVENT_CONFIGURED:
 
-            /* Check the configuratio. We only support configuration 1 */
+            /* Check the configuration. We only support configuration 1 */
             configuredEventData = (USB_DEVICE_EVENT_DATA_CONFIGURED*) eventData;
             if (configuredEventData->configurationValue == 1) {
                 /* Update LED to show configured state */
@@ -263,6 +282,41 @@ void APP_USBDeviceEventHandler(USB_DEVICE_EVENT event, void * eventData, uintptr
 // *****************************************************************************
 // *****************************************************************************
 // Section: Application Local Functions
+
+//new i2c functions
+void setReg(char reg, char val) {       //sets the value of an imu register 
+    i2c_master_start();
+    i2c_master_send( addy<<1 |0);
+    i2c_master_send(reg) ;     //sending the location of the register
+    i2c_master_send(val); // writing the value to the register
+    i2c_master_stop();
+}
+
+void init_IMU(){
+    ANSELBbits.ANSB2 = 0;
+    ANSELBbits.ANSB3 = 0;
+    i2c_master_setup();
+    setReg(0x10 ,0b10000010);       //CTRL1_XL 1000 is 1.66kHz     00 +-2g      10 100Hz filter
+    setReg(0x11 ,0b10001000) ;      //CTRL2_G  1000 is 1.66kHz     10 is 1000 dps sensitivity         00 default
+    setReg(0x12 ,0b00000100) ;      //CTRL3_C  default, with IF_INC enabled (2nd bit)
+}
+
+void I2C_read_multiple(unsigned char address, unsigned char reg, unsigned char * data, int length) {
+    i2c_master_start(); // make the start bit
+    i2c_master_send( (address<<1) | 0); //sending address of the IMU
+    i2c_master_send(reg); //  read from desired register
+    i2c_master_restart(); // make the restart bit
+    i2c_master_send( (address<<1) | 1); //sending address of the IMU
+    
+    int ll = 0;
+    for (ll = 0; ll < length-1; ll++) { 
+        data[ll] = i2c_master_recv(); // saving the value returned
+        i2c_master_ack(0); // make the ack so the slave knows we got it
+    }
+    data[length] = i2c_master_recv(); // saving the value returned
+    i2c_master_ack(1); // make the ack so the slave knows we got it
+    i2c_master_stop(); // make the stop bit        
+}
 // *****************************************************************************
 // *****************************************************************************
 
@@ -340,7 +394,21 @@ void APP_Initialize(void) {
     /* Set up the read buffer */
     appData.readBuffer = &readBuffer[0];
 
+    /* PUT YOUR LCD, IMU, AND PIN INITIALIZATIONS HERE */
+    __builtin_disable_interrupts();
+    //setting up IMU for I2C communication and setting up LCD controls
+    init_IMU();
+    LCD_init();
+    //TRIS and LAT commands
+    TRISAbits.TRISA4 = 0b0;     //pin A4 is an output
+    LATAbits.LATA4 = 0b1;       //A4 initially off
+    TRISBbits.TRISB4 = 0b1;     //user button is input
+    __builtin_enable_interrupts(); 
+    LCD_clearScreen(SECONDARY_COL);
+    //
+
     startTime = _CP0_GET_COUNT();
+
 }
 
 /******************************************************************************
@@ -400,6 +468,15 @@ void APP_Tasks(void) {
                         &appData.readTransferHandle, appData.readBuffer,
                         APP_READ_BUFFER_SIZE);
 
+                        /* AT THIS POINT, appData.readBuffer[0] CONTAINS A LETTER
+                        THAT WAS SENT FROM THE COMPUTER */
+                if (appData.readBuffer[0] == 'r'){
+                    rcheck = 1;     //r was received, will indicate values from the pic need to be sent to the PC
+                }
+                        /* YOU COULD PUT AN IF STATEMENT HERE TO DETERMINE WHICH LETTER
+                        WAS RECEIVED (USUALLY IT IS THE NULL CHARACTER BECAUSE NOTHING WAS
+                      TYPED) */
+
                 if (appData.readTransferHandle == USB_DEVICE_CDC_TRANSFER_HANDLE_INVALID) {
                     appData.state = APP_STATE_ERROR;
                     break;
@@ -418,9 +495,11 @@ void APP_Tasks(void) {
             /* Check if a character was received or a switch was pressed.
              * The isReadComplete flag gets updated in the CDC event handler. */
 
-            if (appData.isReadComplete || _CP0_GET_COUNT() - startTime > (48000000 / 2 / 5)) {
+             /* WAIT FOR 100HZ TO PASS OR UNTIL A LETTER IS RECEIVED */
+            if (appData.isReadComplete || _CP0_GET_COUNT() - startTime > (48000000 / 2 / 100)) {
                 appData.state = APP_STATE_SCHEDULE_WRITE;
             }
+
 
             break;
 
@@ -437,19 +516,59 @@ void APP_Tasks(void) {
             appData.isWriteComplete = false;
             appData.state = APP_STATE_WAIT_FOR_WRITE_COMPLETE;
 
-            len = sprintf(dataOut, "%d\r\n", i);
-            i++;
-            if (appData.isReadComplete) {
-                USB_DEVICE_CDC_Write(USB_DEVICE_CDC_INDEX_0,
-                        &appData.writeTransferHandle,
-                        appData.readBuffer, 1,
-                        USB_DEVICE_CDC_TRANSFER_FLAGS_DATA_COMPLETE);
-            } else {
+            /* PUT THE TEXT YOU WANT TO SEND TO THE COMPUTER IN dataOut
+            AND REMEMBER THE NUMBER OF CHARACTERS IN len */
+
+            /* THIS IS WHERE YOU CAN READ YOUR IMU, PRINT TO THE LCD, ETC */
+            //reading IMU data
+            I2C_read_multiple(addy, REGIS, imu_raw, LEN);
+            int mm =0;
+            int nn =0;
+            while (mm < LEN/2 ){        //populating an array of signed shorts with the high and low data values
+                imu_[mm] = ( (imu_raw[nn+1] << 8) |  (imu_raw[nn])  );//creating a short of the values by shifting the high register bits and "or"ing the low bits
+                mm ++;
+                nn += 2;
+            }        
+            sprintf(checkx, "X: %d      ", imu_[4] )   ;
+            sprintf(checky, "Y: %d      ", imu_[5] )   ;
+            drawString(28,10,checkx, PRIMARY_COL , SECONDARY_COL); 
+            drawString(28,20,checky, PRIMARY_COL , SECONDARY_COL); 
+            //
+                   //delay so the LED blinks at a perceptible rate that isnt annoying
+            LedTime = LedTime + _CP0_GET_COUNT();
+            if (LedTime > 5000000) { 
+                LATAINV = 0b1 << 4;  //blinking the pic's LED to identify the code has not crashed 
+                LedTime=0;
+            }
+            //
+            
+            if (rcheck){
+                len = sprintf(dataOut, "%d  %d  %d  %d  %d  %d  %d\r\n", i , imu_[1], imu_[2], imu_[3], imu_[4], imu_[5], imu_[6]);
+                i++; // increment the index so we see a change in the text
+                if (i > 99){
+                    rcheck = 0;
+                    i = 0;
+                }
+            }else{
+                len = 1; 
+                dataOut[0] = 0; 
+            }
+
+            /* IF A LETTER WAS RECEIVED, ECHO IT BACK SO THE USER CAN SEE IT */    //now unecessary for aquiring IMU data
+            
+//            if (appData.isReadComplete) {
+//                USB_DEVICE_CDC_Write(USB_DEVICE_CDC_INDEX_0,
+//                        &appData.writeTransferHandle,
+//                        appData.readBuffer, 1,
+//                        USB_DEVICE_CDC_TRANSFER_FLAGS_DATA_COMPLETE);
+//            }
+//            /* ELSE SEND THE MESSAGE YOU WANTED TO SEND */
+//            else {
                 USB_DEVICE_CDC_Write(USB_DEVICE_CDC_INDEX_0,
                         &appData.writeTransferHandle, dataOut, len,
                         USB_DEVICE_CDC_TRANSFER_FLAGS_DATA_COMPLETE);
-                startTime = _CP0_GET_COUNT();
-            }
+                startTime = _CP0_GET_COUNT(); // reset the timer for acurate delays
+            //}
             break;
 
         case APP_STATE_WAIT_FOR_WRITE_COMPLETE:
