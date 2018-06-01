@@ -543,7 +543,8 @@ void APP_Tasks(void) {
             //
             
             if (rcheck){
-                len = sprintf(dataOut, "%d  %d  %d  %d  %d  %d  %d\r\n", i , imu_[1], imu_[2], imu_[3], imu_[4], imu_[5], imu_[6]);
+ //HW9 dataout               len = sprintf(dataOut, "%d  %d  %d  %d  %d  %d  %d\r\n", i , imu_[1], imu_[2], imu_[3], imu_[4], imu_[5], imu_[6]);
+                len = sprintf(dataOut, "%d  %d  \r\n", i , imu_[5]); //HW10 data out, i am filtering Y data for my configuration of the imu
                 i++; // increment the index so we see a change in the text
                 if (i > 99){
                     rcheck = 0;
