@@ -70,7 +70,7 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 #define LEN     14          //length of data array to be out put from IMU (2 temp, 6 gyro, 6 accel register values)
 #define addy    0b1101011   //address for the IMU
 #define REGIS    0x20        //address of OUT_TEMP_L register
-#define M_SAMP  4           //number of samples for the MAF
+#define SAMP     8           //number of samples for the MAF & FIR
 
 
 uint8_t APP_MAKE_BUFFER_DMA_READY dataOut[APP_READ_BUFFER_SIZE];
@@ -84,10 +84,12 @@ int startTime = 0; // to remember the loop time
             //values for the gyro
     unsigned char imu_raw [LEN];
     signed short imu_  [LEN/2];
-    signed int maf [M_SAMP];   //buffer for the maf
+    
+    //DSP variables
+    signed int maf [SAMP];   //buffer for the maf
+    signed int iir, iir_old = 0;
+    float weights [SAMP];   //weights for the FIR filter
 
-    
-    
     char checkx [STRLONG];
     char checky [STRLONG];
 //
@@ -415,6 +417,22 @@ void APP_Initialize(void) {
     maf[1] = 0;
     maf[2] = 0;
     maf[3] = 0;
+    maf[3] = 0;
+    maf[4] = 0;
+    maf[5] = 0;
+    maf[6] = 0;
+    maf[7] = 0;
+
+    //weights came from fir1(7,.2)
+    weights[0] = 0.0088;
+    weights[1] = 0.0479;
+    weights[2] = 0.1640;
+    weights[3] = 0.2793;
+    weights[4] = 0.2793;
+    weights[5] = 0.1640;
+    weights[6] = 0.0479;
+    weights[7] = 0.0088;
+    
 
     startTime = _CP0_GET_COUNT();
 
@@ -538,35 +556,35 @@ void APP_Tasks(void) {
                 mm ++;
                 nn += 2;
             }        
-            //MAF
-            int mf = 0;
-            signed int sum = 0;
-            for (mf = 0;mf < M_SAMP-1; mf++){
-                maf[mf]=maf[mf+1];
-                sum = sum + maf[mf];
+            //MAF & FIR
+            int cc = 0;     //counter for filling the values of maf and fir
+            signed int sumMAF, fir = 0;
+            for (cc= 0;cc < SAMP-1; cc++){
+                maf[cc]=maf[cc+1];
+                sumMAF = sumMAF + maf[cc];
+                fir = maf[cc]*weights[cc] + fir;
             }
-            maf[M_SAMP-1]=imu_[5];
-            sum = sum + maf[M_SAMP-1];
-            signed int avg = sum / 4 ;      //avg is the result of the maf
+            maf[SAMP-1]=imu_[5];
+            sumMAF = sumMAF + maf[SAMP-1];
+            signed int avgMAF = sumMAF / SAMP ;      //avg is the result of the maf
+            fir = maf[SAMP-1]*weights[SAMP-1] +fir;
             //
             
+            //IIR
+            float a = .3;
+            float b = .7;
+            iir = a * iir_old + b * imu_[5];
+            iir_old = iir;
+            //
             
-            sprintf(checkx, "X: %d     %d ", imu_[4], mf )   ;
-            sprintf(checky, "Y: %d      %d", imu_[5], avg )   ;
+            sprintf(checkx, "X: %d   ", imu_[4] )   ;
+            sprintf(checky, "Y: %d   ", imu_[5] )   ;
             drawString(28,10,checkx, PRIMARY_COL , SECONDARY_COL); 
             drawString(28,20,checky, PRIMARY_COL , SECONDARY_COL); 
-            //
-                   //delay so the LED blinks at a perceptible rate that isnt annoying
-            LedTime = LedTime + _CP0_GET_COUNT();
-            if (LedTime > 5000000) { 
-                LATAINV = 0b1 << 4;  //blinking the pic's LED to identify the code has not crashed 
-                LedTime=0;
-            }
-            //
             
             if (rcheck){
  //HW9 dataout               len = sprintf(dataOut, "%d  %d  %d  %d  %d  %d  %d\r\n", i , imu_[1], imu_[2], imu_[3], imu_[4], imu_[5], imu_[6]);
-                len = sprintf(dataOut, "%d  %d  %d \r\n", i , imu_[5], avg); //HW10 data out, i am filtering Y data for my configuration of the imu
+                len = sprintf(dataOut, "%d  %d  %d  %d  %d \r\n", i , imu_[5], avgMAF, iir, fir); //HW10 data out, i am filtering Y data for my configuration of the imu
                 i++; // increment the index so we see a change in the text
                 if (i > 99){
                     rcheck = 0;
