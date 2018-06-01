@@ -70,6 +70,7 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 #define LEN     14          //length of data array to be out put from IMU (2 temp, 6 gyro, 6 accel register values)
 #define addy    0b1101011   //address for the IMU
 #define REGIS    0x20        //address of OUT_TEMP_L register
+#define M_SAMP  4           //number of samples for the MAF
 
 
 uint8_t APP_MAKE_BUFFER_DMA_READY dataOut[APP_READ_BUFFER_SIZE];
@@ -83,6 +84,10 @@ int startTime = 0; // to remember the loop time
             //values for the gyro
     unsigned char imu_raw [LEN];
     signed short imu_  [LEN/2];
+    signed int maf [M_SAMP];   //buffer for the maf
+
+    
+    
     char checkx [STRLONG];
     char checky [STRLONG];
 //
@@ -406,6 +411,10 @@ void APP_Initialize(void) {
     __builtin_enable_interrupts(); 
     LCD_clearScreen(SECONDARY_COL);
     //
+    maf[0] = 0;
+    maf[1] = 0;
+    maf[2] = 0;
+    maf[3] = 0;
 
     startTime = _CP0_GET_COUNT();
 
@@ -529,8 +538,21 @@ void APP_Tasks(void) {
                 mm ++;
                 nn += 2;
             }        
-            sprintf(checkx, "X: %d      ", imu_[4] )   ;
-            sprintf(checky, "Y: %d      ", imu_[5] )   ;
+            //MAF
+            int mf = 0;
+            signed int sum = 0;
+            for (mf = 0;mf < M_SAMP-1; mf++){
+                maf[mf]=maf[mf+1];
+                sum = sum + maf[mf];
+            }
+            maf[M_SAMP-1]=imu_[5];
+            sum = sum + maf[M_SAMP-1];
+            signed int avg = sum / 4 ;      //avg is the result of the maf
+            //
+            
+            
+            sprintf(checkx, "X: %d     %d ", imu_[4], mf )   ;
+            sprintf(checky, "Y: %d      %d", imu_[5], avg )   ;
             drawString(28,10,checkx, PRIMARY_COL , SECONDARY_COL); 
             drawString(28,20,checky, PRIMARY_COL , SECONDARY_COL); 
             //
@@ -544,7 +566,7 @@ void APP_Tasks(void) {
             
             if (rcheck){
  //HW9 dataout               len = sprintf(dataOut, "%d  %d  %d  %d  %d  %d  %d\r\n", i , imu_[1], imu_[2], imu_[3], imu_[4], imu_[5], imu_[6]);
-                len = sprintf(dataOut, "%d  %d  \r\n", i , imu_[5]); //HW10 data out, i am filtering Y data for my configuration of the imu
+                len = sprintf(dataOut, "%d  %d  %d \r\n", i , imu_[5], avg); //HW10 data out, i am filtering Y data for my configuration of the imu
                 i++; // increment the index so we see a change in the text
                 if (i > 99){
                     rcheck = 0;
