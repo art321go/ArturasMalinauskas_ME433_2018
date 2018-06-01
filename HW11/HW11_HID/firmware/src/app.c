@@ -54,6 +54,13 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 // *****************************************************************************
 
 #include "app.h"
+#include<xc.h>           // processor SFR definitions
+#include<sys/attribs.h>  // __ISR macro
+#include<math.h>        //math functions
+#include<stdio.h>
+#include "LED_HELP.h"      //given library for ST7735
+#include "i2c_master_noint.h"    //library for I2C
+
 
 
 // *****************************************************************************
@@ -79,6 +86,12 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 
 APP_DATA appData;
 
+#define COUNTER 1200000     //counter for IMU  
+#define LEN     14          //length of data array to be out put from IMU (2 temp, 6 gyro, 6 accel register values)
+#define addy    0b1101011   //address for the IMU
+#define REGIS    0x20        //address of OUT_TEMP_L register
+
+
 /* Mouse Report */
 MOUSE_REPORT mouseReport APP_MAKE_BUFFER_DMA_READY;
 MOUSE_REPORT mouseReportPrevious APP_MAKE_BUFFER_DMA_READY;
@@ -89,6 +102,43 @@ MOUSE_REPORT mouseReportPrevious APP_MAKE_BUFFER_DMA_READY;
 // Section: Application Callback Functions
 // *****************************************************************************
 // *****************************************************************************
+
+//i2c  and imu functions
+void setReg(char reg, char val) {       //sets the value of an imu register 
+    i2c_master_start();
+    i2c_master_send( addy<<1 |0);
+    i2c_master_send(reg) ;     //sending the location of the register
+    i2c_master_send(val); // writing the value to the register
+    i2c_master_stop();
+}
+
+void init_IMU(){
+    ANSELBbits.ANSB2 = 0;
+    ANSELBbits.ANSB3 = 0;
+    i2c_master_setup();
+    setReg(0x10 ,0b10000010);       //CTRL1_XL 1000 is 1.66kHz     00 +-2g      10 100Hz filter
+    setReg(0x11 ,0b10001000) ;      //CTRL2_G  1000 is 1.66kHz     10 is 1000 dps sensitivity         00 default
+    setReg(0x12 ,0b00000100) ;      //CTRL3_C  default, with IF_INC enabled (2nd bit)
+}
+
+void I2C_read_multiple(unsigned char address, unsigned char reg, unsigned char * data, int length) {
+    i2c_master_start(); // make the start bit
+    i2c_master_send( (address<<1) | 0); //sending address of the IMU
+    i2c_master_send(reg); //  read from desired register
+    i2c_master_restart(); // make the restart bit
+    i2c_master_send( (address<<1) | 1); //sending address of the IMU
+    
+    int ll = 0;
+    for (ll = 0; ll < length-1; ll++) { 
+        data[ll] = i2c_master_recv(); // saving the value returned
+        i2c_master_ack(0); // make the ack so the slave knows we got it
+    }
+    data[length] = i2c_master_recv(); // saving the value returned
+    i2c_master_ack(1); // make the ack so the slave knows we got it
+    i2c_master_stop(); // make the stop bit        
+}
+
+
 
 void APP_USBDeviceHIDEventHandler(USB_DEVICE_HID_INDEX hidInstance,
         USB_DEVICE_HID_EVENT event, void * eventData, uintptr_t userData) {
@@ -268,6 +318,15 @@ void APP_Initialize(void) {
     //appData.emulateMouse = true;
     appData.hidInstance = 0;
     appData.isMouseReportSendBusy = false;
+    
+     //setting up IMU for I2C communication and setting up LCD controls
+    init_IMU();
+    LCD_init();
+    //TRIS and LAT commands
+    TRISAbits.TRISA4 = 0b0;     //pin A4 is an output
+    LATAbits.LATA4 = 0b1;       //A4 initially off
+    TRISBbits.TRISB4 = 0b1;     //user button is input
+    LCD_clearScreen(SECONDARY_COL);
 }
 
 /******************************************************************************
@@ -279,9 +338,10 @@ void APP_Initialize(void) {
  */
 
 void APP_Tasks(void) {
-    static int8_t vector = 0;
-    static uint8_t movement_length = 0;
-    int8_t dir_table[] = {-4, -4, -4, 0, 4, 4, 4, 0};
+////    static int8_t vector = 0;
+////    static uint8_t movement_length = 0;
+////    int8_t dir_table[] = {-4, -4, -4, 0, 4, 4, 4, 0}; 
+    static uint8_t inc = 0;     //variable for determining which cycle to change x, y coordinate data
 
     /* Check the application's current state. */
     switch (appData.state) {
@@ -319,14 +379,50 @@ void APP_Tasks(void) {
         case APP_STATE_MOUSE_EMULATE:
             
             // every 50th loop, or 20 times per second
-            if (movement_length > 50) {
+    ////        if (movement_length > 50) {
+                //stuff for IMU and LCD
+                _CP0_SET_COUNT(0); //initializing the core timer to zero
+                                
+                //reseting values for the gyro
+                unsigned char imu_raw [LEN];
+                signed short imu_  [LEN/2];
+                signed int imu_p  [LEN/2];    //adjusted IMU data to a percentage of 65535, the max value of the short
+                char checkx [STRLONG];
+                char checky [STRLONG];
+                //
+                
+                 //reading IMU data
+                I2C_read_multiple(addy, REGIS, imu_raw, LEN);
+                int mm =0;
+                int nn =0;
+                while (mm < LEN/2 ){        //populating an array of signed shorts with the high and low data values
+                    imu_[mm] = ( (imu_raw[nn+1] << 8) |  (imu_raw[nn])  );//creating a short of the values by shifting the high register bits and "or"ing the low bits
+                    imu_p[mm] = ( ( ( signed int ) (imu_[mm] ) ) * 20/3) / 32768 ; 
+                    mm ++;
+                    nn += 2;
+                }        
+
+            if (inc == 5 ){
                 appData.mouseButton[0] = MOUSE_BUTTON_STATE_RELEASED;
                 appData.mouseButton[1] = MOUSE_BUTTON_STATE_RELEASED;
-                appData.xCoordinate = (int8_t) dir_table[vector & 0x07];
-                appData.yCoordinate = (int8_t) dir_table[(vector + 2) & 0x07];
-                vector++;
-                movement_length = 0;
+                appData.xCoordinate = (int8_t) -imu_p[4];   //sign change to create intuitive motion
+                appData.yCoordinate = (int8_t) -imu_p[5];//sign change to create intuitive motion
+                inc = 0;
+            }else{
+                appData.mouseButton[0] = MOUSE_BUTTON_STATE_RELEASED;
+                appData.mouseButton[1] = MOUSE_BUTTON_STATE_RELEASED;
+                appData.xCoordinate = (int8_t) 0;
+                appData.yCoordinate = (int8_t) 0;
+                inc++;
             }
+            
+                
+                
+////                appData.xCoordinate = (int8_t) dir_table[vector & 0x07];
+////                appData.yCoordinate = (int8_t) dir_table[(vector + 2) & 0x07];
+    ////            vector++;
+    ////            movement_length = 0;
+     ////       }
 
             if (!appData.isMouseReportSendBusy) {
                 /* This means we can send the mouse report. The
@@ -378,7 +474,7 @@ void APP_Tasks(void) {
                             sizeof (MOUSE_REPORT));
                     appData.setIdleTimer = 0;
                 }
-                movement_length++;
+////                movement_length++;
             }
 
             break;
