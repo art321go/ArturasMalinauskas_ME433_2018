@@ -8,23 +8,24 @@
 
     <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="507dp"
+        android:orientation="vertical"
         android:paddingBottom="10dp"
         android:paddingLeft="10dp"
         android:paddingRight="10dp"
         android:paddingTop="10dp"
-        android:orientation="vertical">
+        tools:layout_editor_absoluteY="4dp">
 
         <TextView
+            android:id="@+id/cameraStatus"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Nothing yet"
-            android:id="@+id/cameraStatus"/>
+            android:text="Nothing yet" />
 
         <SurfaceView
             android:id="@+id/surfaceview"
-            android:layout_width="640px"
-            android:layout_height="480px" />
+            android:layout_width="320px"
+            android:layout_height="240px" />
 
 
         <SeekBar
@@ -32,11 +33,10 @@
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:layout_margin="1dp"
-            android:progress="10"
-            android:secondaryProgress="100"
-            android:paddingTop="3dp"
             android:paddingBottom="3dp"
-            />
+            android:paddingTop="3dp"
+            android:progress="10"
+            android:secondaryProgress="100" />
 
 
         <TextView
@@ -48,9 +48,8 @@
 
         <TextureView
             android:id="@+id/textureview"
-            android:layout_width="640px"
-            android:layout_height="480px" />
-
+            android:layout_width="320px"
+            android:layout_height="240px" />
 
 
     </LinearLayout>

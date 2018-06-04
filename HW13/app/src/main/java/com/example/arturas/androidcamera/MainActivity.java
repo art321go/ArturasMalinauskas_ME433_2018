@@ -33,7 +33,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     private TextureView mTextureView;
     private SurfaceView mSurfaceView;
     private SurfaceHolder mSurfaceHolder;
-    private Bitmap bmp = Bitmap.createBitmap(640, 480, Bitmap.Config.ARGB_8888); //can play with image size to improve performance
+    private Bitmap bmp = Bitmap.createBitmap(320, 240, Bitmap.Config.ARGB_8888); //can play with image size to improve performance
     private Canvas canvas = new Canvas(bmp);
     private Paint paint1 = new Paint();
     private TextView mTextView;
@@ -102,7 +102,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         mCamera = Camera.open();
         Camera.Parameters parameters = mCamera.getParameters();
         //can toggle other android camera filters, may improve image analysis
-        parameters.setPreviewSize(640, 480);
+        parameters.setPreviewSize(320, 240);
         parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_INFINITY); // no autofocusing
         parameters.setAutoExposureLock(true); // keep the white balance constant       Some phones may not like this
         mCamera.setParameters(parameters);
@@ -143,7 +143,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
 
                 // in the row, see if there is more green than red
                 for (int i = 0; i < bmp.getWidth(); i++) {
-                    if ((green(pixels[i]) - red(pixels[i])) > thresh) {
+                    if ( ( (green(pixels[i]) - red(pixels[i])) > thresh ) & ( (green(pixels[i]) - blue(pixels[i])) > thresh )  ) {
                         pixels[i] = rgb(0, 255, 0); // over write the pixel with pure green
                     }
                 }
